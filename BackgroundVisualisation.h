@@ -19,7 +19,7 @@ public:
     void setPartialRatios(std::vector<float>& newPartialRatios) { partials_ratios = newPartialRatios; }
     void setRoot(float newRoot) { root = newRoot; }
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave;  }
-    void setIntervals(float int1, float int2, float int3);
+    void setIntervals(std::vector<float>& intvls);
     void update();
 
 private:

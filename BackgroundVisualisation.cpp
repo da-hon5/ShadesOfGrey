@@ -25,12 +25,10 @@ intervals(std::vector<float>(numberofintervals))
     int x = 0;
 }
 
-void BackgroundVisualisation::setIntervals(float int1, float int2, float int3)
+void BackgroundVisualisation::setIntervals(std::vector<float>& intvls)
 {
     jassert(intervals.size() == numberofintervals);
-    intervals[0] = int1;
-    intervals[1] = int2;
-    intervals[2] = int3;
+    intervals = intvls;
 
     update();
 }
@@ -69,11 +67,11 @@ void BackgroundVisualisation::paint(Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(juce::Colours::beige);
-    float rectwidth = (getWidth() - 20) / (float)numberofnotes;
-    float rectheight = getHeight() - 20;
+    float rectwidth = getWidth() / (float)numberofnotes;
+    float rectheight = getHeight();
     for (int i = 0; i < numberofnotes; i++) {
         g.setColour(juce::Colour::fromFloatRGBA(0.0f, 0.0f, 0.0f, dissvector[i]));
-        g.fillRect(juce::Rectangle<float>(10 + (i * rectwidth), 10, rectwidth, rectheight));
+        g.fillRect(juce::Rectangle<float>(0 + (i * rectwidth), 0, rectwidth, rectheight));
     }
 }
 
@@ -110,7 +108,6 @@ std::vector<float> BackgroundVisualisation::calculate_frequencies()
 {
     std::vector<float> allpartials;
     std::vector<float> partials1(numbofpartials);
-
     for (int i = 0; i < numbofpartials; i++) {
         partials1[i] = root * partials_ratios[i] * intervals[0];
     }

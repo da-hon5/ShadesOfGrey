@@ -46,9 +46,9 @@
 
 
 #pragma once
-using namespace std;
 #include "WavetableOscillator.h"
 #include "BackgroundVisualisation.h"
+#include "Note.h"
 
 //==============================================================================
 class MultiTouchMainComponent : public juce::AudioAppComponent,
@@ -57,25 +57,26 @@ class MultiTouchMainComponent : public juce::AudioAppComponent,
 public:
     MultiTouchMainComponent()
     {
-        backgroundVisualisation.reset(new BackgroundVisualisation(numberofnotes, numberofintervals, partials_ratios, amplitudes));
+        setWantsKeyboardFocus(true);
+        backgroundVisualisation.reset(new BackgroundVisualisation(numbOfNotes, numbOfIntervals, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
+        note1.setInterceptsMouseClicks(false, true);
+        note2.setInterceptsMouseClicks(false, true);
+        note3.setInterceptsMouseClicks(false, true);
 
-        addAndMakeVisible(frequencySlider);
-        addAndMakeVisible(frequencySlider2);
+        addAndMakeVisible(note1);
+        addAndMakeVisible(note2);
+        addAndMakeVisible(note3);
+        note1.reset();
+        note2.reset();
+        note3.reset();
+
+        userInstructions.setText("Place the notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
+        addAndMakeVisible(userInstructions);
         addAndMakeVisible(rootSlider);
-        frequencySlider2.setRange(0.0, 1.0);
-        frequencySlider.setRange(0.0, 1.0);
         rootSlider.setRange(50.0, 400.0);
-        frequencySlider.setValue(0);
-        frequencySlider2.setValue(0.5);
-        rootSlider.setValue(110);
-        frequencySlider.onValueChange = [this] {
-            updateFrequency();
-        };
-        frequencySlider2.onValueChange = [this] {
-            updateFrequency();
-        };
+        rootSlider.setValue(80);
         rootSlider.onValueChange = [this] {
             updateFrequency();
             backgroundVisualisation->setRoot(rootSlider.getValue());
@@ -85,7 +86,7 @@ public:
 
         setSize (800, 600);
         setAudioChannels (0, 2); // no inputs, two outputs
-        startTimer (300);
+        startTimer (100);
     }
 
     ~MultiTouchMainComponent() override
@@ -93,30 +94,53 @@ public:
         shutdownAudio();
     }
 
-    void paint(juce::Graphics& g) override
-    {
-    }
+    void paint(juce::Graphics& g) override {}
 
     void resized() override
     {
-        frequencySlider.setBounds(10, 40, getWidth() - 20, 20);
-        frequencySlider2.setBounds(10, 70, getWidth() - 20, 20);
-        rootSlider.setBounds(10, 100, getWidth() - 200, 20);
+        userInstructions.setBounds(10, 10, getWidth() - 20, 20);
+        rootSlider.setBounds(10, 50, getWidth() - 200, 20);
         backgroundVisualisation->setBounds(getBounds());
+        note1.setBounds(getBounds());
+        note2.setBounds(getBounds());
+        note3.setBounds(getBounds());
     }
 
     void mouseDown(const juce::MouseEvent& event) override
     {
-        juce::Point<int> xy = event.getMouseDownPosition();
-        int x = xy.getX();
-        auto s = std::to_string(x);
-        Logger::outputDebugString("x-position: " + s);
+        ++numbOfClicks;
+        if (numbOfClicks == 1) {
+            note1.updatePosition(event.getMouseDownPosition().toFloat());
+            note1.repaint();
+        } else if (numbOfClicks == 2) {
+            note2.updatePosition(event.getMouseDownPosition().toFloat());
+            note2.repaint();
+        }  else if (numbOfClicks == 3) {
+            note3.updatePosition(event.getMouseDownPosition().toFloat());
+            note3.repaint();
+        }
+        
+        updateFrequency();
+    }
+
+    bool keyPressed(const KeyPress& k) override 
+    {
+        if (k.getTextCharacter() == ' ') {
+            intervals = { 0.0f, 0.0f, 0.0f };
+            freq = { 0.0f, 0.0f, 0.0f };
+            numbOfClicks = 0;
+            note1.reset();
+            note2.reset();
+            note3.reset();
+
+        }
+        return 0;
     }
 
     void timerCallback() override
     { 
         backgroundVisualisation->update();
-        backgroundVisualisation->repaint(); //updates the visuals
+        backgroundVisualisation->repaint();
     }
 
     void createWavetable()
@@ -126,12 +150,12 @@ public:
 
         auto* samples = sineTable.getWritePointer (0);
 
-        jassert (partials_ratios.size() == amplitudes.size());
+        jassert (partialRatios.size() == amplitudes.size());
 
-        for (auto harmonic = 0; harmonic < partials_ratios.size(); ++harmonic)
+        for (auto harmonic = 0; harmonic < partialRatios.size(); ++harmonic)
         {
             //doesn't work with non-integer harmonics => sinus wird irgendwo abgeschnitten (nicht beim nulldurchgang)
-            float angleDelta = juce::MathConstants<double>::twoPi / (double)tableSize * partials_ratios[harmonic];
+            float angleDelta = juce::MathConstants<double>::twoPi / (double)tableSize * partialRatios[harmonic];
             auto currentAngle = 0.0;
 
             for (unsigned int i = 0; i < tableSize; ++i)
@@ -146,29 +170,32 @@ public:
 
     void updateFrequency()
     {
-        float step1 = round(frequencySlider.getValue() * numberofnotes);
-        float step2 = round(frequencySlider2.getValue() * numberofnotes);
-        interval1 = pow(2, step1 / notesperoctave);
-        interval2 = pow(2, step2 / notesperoctave);
+        float step1 = round(numbOfNotes * (note1.getPosition().getX()) / getWidth());
+        float step2 = round(numbOfNotes * (note2.getPosition().getX()) / getWidth());
+        float step3 = round(numbOfNotes * (note3.getPosition().getX()) / getWidth());
+        intervals[0] = pow(2, step1 / notesPerOct);
+        intervals[1] = pow(2, step2 / notesPerOct);
+        intervals[2] = pow(2, step3 / notesPerOct);
         root = rootSlider.getValue();     //lowest frequency
-        freq[0] = interval1 * root;
-        freq[1] = interval2 * root;
+        freq[0] = intervals[0] * root;
+        freq[1] = intervals[1] * root;
+        freq[2] = intervals[2] * root;
 
-        backgroundVisualisation->setIntervals(interval1, interval2, interval3);
+        backgroundVisualisation->setIntervals(intervals);
     }
 
     void prepareToPlay (int, double sampleRate) override
     {
-        auto numberOfOscillators = 2;
         currentSampleRate = sampleRate;
-        for (auto i = 0; i < numberOfOscillators; ++i) {
+        for (auto i = 0; i < numbOfIntervals; ++i) {
             auto* oscillator = new WavetableOscillator(sineTable);
-            updateFrequency();
-            oscillator->setFrequency((float)220, (float)sampleRate);
+            //updateFrequency();
+            //oscillator->setFrequency((float)440, (float)sampleRate);
             oscillators.add(oscillator);
-        }
-          
-        level = 0.25f / (float) numberOfOscillators;
+        } 
+
+        //level = 0.25f / (float) numbOfIntervals;
+        
     }
 
     void releaseResources() override {}
@@ -180,7 +207,7 @@ public:
 
         bufferToFill.clearActiveBufferRegion();
 
-        for (auto oscillatorIndex = 0; oscillatorIndex < oscillators.size(); ++oscillatorIndex)
+        for (auto oscillatorIndex = 0; oscillatorIndex < numbOfIntervals; ++oscillatorIndex)
         {
             auto* oscillator = oscillators.getUnchecked (oscillatorIndex);
             oscillator->setFrequency((float)freq[oscillatorIndex], (float)currentSampleRate); //set frequency for each oscillator
@@ -196,28 +223,30 @@ public:
     }
 
 private:
-    juce::Slider frequencySlider;
-    juce::Slider frequencySlider2;
     juce::Slider rootSlider;
+    juce::Label userInstructions;
+
+    Note note1;
+    Note note2;
+    Note note3;
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
     const unsigned int tableSize = 1 << 7;
-    float level = 0.0f;
-    std::vector<float> freq = { 0.0f, 0.0f }; //interval
-    std::vector<float> partials_ratios = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    const int numbOfIntervals = 3;
+    float level = 0.25f / (float) numbOfIntervals;
+    std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
+    std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
+    std::vector<float> partialRatios = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     std::vector<float> amplitudes = { 1, 0.5, 0.33, 0.25, 0.2, 0.4, 0.7, 0.1, 0.5, 0.6 };
-    double currentSampleRate = 0.0;
-    float root = 0.0f; // lowest note
-    float interval1 = 0.0f;
-    float interval2 = 0.0f;
-    float interval3 = 0.0f;
-    int notesperoctave = 12;
-    int octaves = 4;
-    int numberofintervals = 3;
-    int numberofnotes = notesperoctave * octaves;
-    int numbofpartials = partials_ratios.size();
-    int numbofamplitudes = amplitudes.size();
+    double currentSampleRate = 0.0f;
+    float root = 0.0f; 
+    const int notesPerOct = 12;
+    const int octaves = 4;
+    int numbOfNotes = notesPerOct * octaves;
+    int numbOfPartials = partialRatios.size();
+    int numbOfAmplitudes = amplitudes.size();
+    int numbOfClicks = 0;
 
     juce::AudioSampleBuffer sineTable;
     juce::OwnedArray<WavetableOscillator> oscillators;
