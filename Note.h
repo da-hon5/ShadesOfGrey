@@ -36,10 +36,6 @@ public:
         juce::Rectangle<float> ballArea(0, 0, 30, 30);
         ballArea.setCentre(position);
         g.fillEllipse(ballArea);
-
-        /*float x = position.getX();
-        auto s = std::to_string(x);
-        Logger::outputDebugString("x-position: " + s);*/ 
     }
 
     void reset()
