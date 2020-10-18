@@ -34,28 +34,20 @@ void BackgroundVisualisation::setIntervals(std::vector<float>& intvls)
 }
 
 void BackgroundVisualisation::update()
-{
-    // preallocate vector memory with defined vector lengths !!!!!!!!!!!!!
+{    
+    for (int i = 0; i < (numberofintervals + 1); i++) {
+        std::copy(amplitudes.begin(), amplitudes.end(), allamplitudes.begin() + (i * amplitudes.size())); //all amplitudes + new amplitudes
+    }
+
     auto allpartials = calculate_frequencies();
-    std::vector<float> allamplitudes;
-    std::vector<float> amplitudes1 = amplitudes;
-    std::vector<float> amplitudes2 = amplitudes;
-    std::vector<float> amplitudes3 = amplitudes;
-    allamplitudes.insert(allamplitudes.end(), amplitudes1.begin(), amplitudes1.end());
-    allamplitudes.insert(allamplitudes.end(), amplitudes2.begin(), amplitudes2.end());
-    allamplitudes.insert(allamplitudes.end(), amplitudes3.begin(), amplitudes3.end());
 
     std::vector<float> partialsnew(numbofpartials);
-    std::vector<float> amplitudesnew = amplitudes;
-    allamplitudes.insert(allamplitudes.end(), amplitudesnew.begin(), amplitudesnew.end());
-
     for (float i = 0; i <= numberofnotes; i++) {
         for (int j = 0; j < numbofpartials; j++) {
             partialsnew[j] = root * partials_ratios[j] * pow(2, i / notesPerOctave);
         }
-        allpartials.insert(allpartials.end(), partialsnew.begin(), partialsnew.end());
+        std::copy(partialsnew.begin(), partialsnew.end(), allpartials.begin() + (numberofintervals * numbofpartials));
         dissvector[i] = dissmeasure(allpartials, allamplitudes);
-        allpartials.erase(allpartials.end() - numbofpartials, allpartials.end());
     }
 
     float dissvector_max = *max_element(dissvector.begin(), dissvector.end());
@@ -106,22 +98,11 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
 
 std::vector<float> BackgroundVisualisation::calculate_frequencies()
 {
-    std::vector<float> allpartials;
-    std::vector<float> partials1(numbofpartials);
-    for (int i = 0; i < numbofpartials; i++) {
-        partials1[i] = root * partials_ratios[i] * intervals[0];
+    for (int j = 0; j < numberofintervals; j++) {
+        for (int i = 0; i < numbofpartials; i++) {
+            allpartials[i + (j * numbofpartials)] = root * partials_ratios[i] * intervals[j];
+        }
     }
-    std::vector<float> partials2(numbofpartials);
-    for (int i = 0; i < numbofpartials; i++) {
-        partials2[i] = root * partials_ratios[i] * intervals[1];
-    }
-    std::vector<float> partials3(numbofpartials);
-    for (int i = 0; i < numbofpartials; i++) {
-        partials3[i] = root * partials_ratios[i] * intervals[2];
-    }
-    allpartials.insert(allpartials.end(), partials1.begin(), partials1.end());
-    allpartials.insert(allpartials.end(), partials2.begin(), partials2.end());
-    allpartials.insert(allpartials.end(), partials3.begin(), partials3.end());
-
+    
     return allpartials;
 }

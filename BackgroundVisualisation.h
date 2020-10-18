@@ -37,4 +37,6 @@ private:
     std::vector<float> partials_ratios;
     std::vector<float> amplitudes;
     std::vector<float> intervals;
+    std::vector<float> allpartials = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
+    std::vector<float> allamplitudes = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
 };

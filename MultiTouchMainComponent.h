@@ -233,7 +233,7 @@ private:
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
     const unsigned int tableSize = 1 << 7;
-    const int numbOfIntervals = 3;
+    const int numbOfIntervals = 6;
     float level = 0.25f / (float) numbOfIntervals;
     std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
     std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
