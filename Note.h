@@ -33,14 +33,14 @@ public:
     void paint(juce::Graphics& g) override
     {
         g.setColour(juce::Colours::green);
-        juce::Rectangle<float> ballArea(0, 0, 30, 30);
+        juce::Rectangle<float> ballArea(0, 0, 25, 25);
         ballArea.setCentre(position);
         g.fillEllipse(ballArea);
     }
 
     void reset()
     {
-        position = juce::Point<float> (0.0f, -30.0f); //places notes outside of the window where the user can't see them
+        position = juce::Point<float> (-30.0f, -30.0f); //places notes outside of the window where the user can't see them
         
     }
 

@@ -14,10 +14,11 @@
 class BackgroundVisualisation : public Component
 {
 public:
-    BackgroundVisualisation(int numberofnotes, int numberofintervals, std::vector<float>& partials_ratios, std::vector<float>& amplitudes);
+    BackgroundVisualisation(int numberofnotes, int numberofintervals, int octaves, int notesPerOctave, float root, std::vector<float>& partials_ratios, std::vector<float>& amplitudes);
 
     void setPartialRatios(std::vector<float>& newPartialRatios) { partials_ratios = newPartialRatios; }
     void setRoot(float newRoot) { root = newRoot; }
+    void setOctaves(float newOctaves) { octaves = newOctaves; }
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave;  }
     void setIntervals(std::vector<float>& intvls);
     void update();
@@ -29,6 +30,7 @@ private:
     std::vector<float> calculate_frequencies();
 
     float root;
+    int octaves;
     int notesPerOctave;
     int numbofpartials;
     int numberofnotes;

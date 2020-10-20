@@ -58,11 +58,11 @@ public:
     MultiTouchMainComponent()
     {
         setWantsKeyboardFocus(true);
-        backgroundVisualisation.reset(new BackgroundVisualisation(numbOfNotes, numbOfIntervals, partialRatios, amplitudes));
+        backgroundVisualisation.reset(new BackgroundVisualisation(numbOfNotes, numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
 
-        for (auto i = 0; i < numbOfIntervals; i++)
+        for (int i = 0; i < numbOfIntervals; i++)
         {
             auto newNote = new Note();
             addAndMakeVisible(newNote);
@@ -71,7 +71,7 @@ public:
             notes[i]->reset();
         }
 
-        userInstructions.setText("Place the notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
+        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
         addAndMakeVisible(userInstructions);
         addAndMakeVisible(rootSlider);
         rootSlider.setRange(50.0, 400.0);
@@ -110,7 +110,7 @@ public:
         numbOfClicks++;
         for (int i = 0; i < numbOfIntervals; ++i)
         {
-            if (numbOfClicks == i) {
+            if (numbOfClicks == (i + 1)) {
                 notes[i]->updatePosition(event.getMouseDownPosition().toFloat());
                 notes[i]->repaint();
             }
@@ -130,7 +130,8 @@ public:
             std::fill(intervals.begin(), intervals.end(), 0.0f);
             std::fill(freq.begin(), freq.end(), 0.0f);
 
-        } Logger::outputDebugString("size of notes: " + std::to_string(notes.size()));
+        } 
+        updateFrequency();
         return 0;
     }
 
@@ -168,23 +169,17 @@ public:
     void updateFrequency()
     {
         root = rootSlider.getValue();
-        for (auto i = 0; i < numbOfIntervals; i++) {
-            scaleSteps[i] = round(numbOfNotes * (notes[i]->getPosition().getX()) / getWidth());
-            intervals[i] = pow(2, scaleSteps[i] / notesPerOct);
-            if (intervals[i] > 1) {
-                freq[i] = intervals[i] * root;
-            }
-            else {
+        for (int i = 0; i < numbOfIntervals; i++) {
+            if (notes[i]->getPosition().getX() < 0) {
+                intervals[i] = 0.0f;
                 freq[i] = 0.0f;
             }
+            else {
+                scaleSteps[i] = floor(numbOfNotes * (notes[i]->getPosition().getX()) / getWidth());
+                intervals[i] = pow(2, scaleSteps[i] / notesPerOct);
+                freq[i] = intervals[i] * root;
+            }
         }
-        Logger::outputDebugString("intervals[0]: " + std::to_string(intervals[0]));
-        Logger::outputDebugString("intervals[1]: " + std::to_string(intervals[1]));
-        Logger::outputDebugString("intervals[2]: " + std::to_string(intervals[2]));
-        Logger::outputDebugString("freq[0]: " + std::to_string(freq[0]));
-        Logger::outputDebugString("freq[1]: " + std::to_string(freq[1]));
-        Logger::outputDebugString("freq[2]: " + std::to_string(freq[2]));
-
         backgroundVisualisation->setIntervals(intervals);
     }
 
@@ -193,13 +188,8 @@ public:
         currentSampleRate = sampleRate;
         for (auto i = 0; i < numbOfIntervals; ++i) {
             auto* oscillator = new WavetableOscillator(sineTable);
-            //updateFrequency();
-            //oscillator->setFrequency((float)440, (float)sampleRate);
             oscillators.add(oscillator);
         } 
-
-        //level = 0.25f / (float) numbOfIntervals;
-        
     }
 
     void releaseResources() override {}
@@ -233,7 +223,9 @@ private:
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
     const unsigned int tableSize = 1 << 7;
-    const int numbOfIntervals = 6;
+    const int numbOfIntervals = 8;  //#notes you can play simultaneously
+    const int notesPerOct = 23;
+    const int octaves = 2;
     float level = 0.25f / (float) numbOfIntervals;
     std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
     std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
@@ -242,8 +234,6 @@ private:
     std::vector<float> amplitudes = { 1, 0.5, 0.33, 0.25, 0.2, 0.4, 0.7, 0.1, 0.5, 0.6 };
     double currentSampleRate = 0.0f;
     float root = 0.0f; 
-    const int notesPerOct = 12;
-    const int octaves = 3;
     int numbOfNotes = notesPerOct * octaves;
     int numbOfPartials = partialRatios.size();
     int numbOfAmplitudes = amplitudes.size();
@@ -253,6 +243,5 @@ private:
     juce::OwnedArray<WavetableOscillator> oscillators;
     juce::OwnedArray<Note> notes;
     
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultiTouchMainComponent)
 };

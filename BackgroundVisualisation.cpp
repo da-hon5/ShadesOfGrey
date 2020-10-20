@@ -10,10 +10,11 @@
 
 #include "BackgroundVisualisation.h"
 
-BackgroundVisualisation::BackgroundVisualisation(int numberofnotes, int numberofintervals, std::vector<float>& partials_ratios, std::vector<float>& amplitudes)
+BackgroundVisualisation::BackgroundVisualisation(int numberofnotes, int numberofintervals, int octaves, int notesPerOctave, float root, std::vector<float>& partials_ratios, std::vector<float>& amplitudes)
 :
-root(50.0f),
-notesPerOctave(12),
+root(root),
+notesPerOctave(notesPerOctave),
+octaves(octaves),
 numbofpartials(partials_ratios.size()),
 numberofnotes(numberofnotes),
 numberofintervals(numberofintervals),
@@ -64,6 +65,10 @@ void BackgroundVisualisation::paint(Graphics& g)
     for (int i = 0; i < numberofnotes; i++) {
         g.setColour(juce::Colour::fromFloatRGBA(0.0f, 0.0f, 0.0f, dissvector[i]));
         g.fillRect(juce::Rectangle<float>(0 + (i * rectwidth), 0, rectwidth, rectheight));
+    }
+    g.setColour(juce::Colour::fromFloatRGBA(1.0f, 0.0f, 0.0f, 0.8f));
+    for (int i = 1; i < octaves; i++) {
+        g.fillRect(juce::Rectangle<float>(i * getWidth() / octaves, 0, 1.5, getHeight()));
     }
 }
 
