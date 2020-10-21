@@ -1,0 +1,8 @@
+1) make numberOfNotes, numberOfOctaves, octaves, ... modifiable by the user at runtime
+
+2) convert amplitudes of partials to loudnesses??
+
+3) MAKE NOTES MOVEABLE: 
+   - move the actual component "note", not just the visual dot
+   - put mouseDrag (and mouseDown) in class "note"?
+   - play around with setInterceptsMouseClicks to get it working
