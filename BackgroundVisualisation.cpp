@@ -90,6 +90,13 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
 
     jassert(freq.size() == amp.size());
 
+    /*std::vector<float> SPL(N);
+    std::vector<float> loudn(N);
+    for (int j = 0; j < N; j++) {
+        SPL[j] = 2 * log10((amp[j] / 1.41421356) / 0.00002);
+        loudn[j] = 0.0625 * pow(2, SPL[j]); 
+    }*/
+
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             l_ij = std::min(amp[i], amp[j]);
@@ -98,7 +105,7 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
             d = d + l_ij * (exp(-b1 * s * f_dif) - exp(-b2 * s * f_dif));
         }
     }
-    return d / 2;
+    return d;
 }
 
 std::vector<float> BackgroundVisualisation::calculate_frequencies()

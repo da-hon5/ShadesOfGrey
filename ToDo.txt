@@ -2,7 +2,13 @@
 
 2) convert amplitudes of partials to loudnesses??
 
-3) MAKE NOTES MOVEABLE: 
-   - move the actual component "note", not just the visual dot
-   - put mouseDrag (and mouseDown) in class "note"?
-   - play around with setInterceptsMouseClicks to get it working
+3) remove (reset) lying note when clicked without dragging (or when double-clicked?):
+    - maybe use "getDistanceFromDragStart()"-method to decide if user dragged far enough or just a little bit by accident
+
+
+--------GIT COMMANDS:-------
+git init
+git status
+git add .
+git commit -m "message"
+git push -u "url" master

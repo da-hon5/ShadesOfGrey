@@ -64,11 +64,12 @@ public:
 
         for (int i = 0; i < numbOfIntervals; i++)
         {
-            auto newNote = new Note();
+            auto* newNote = new Note();
             addAndMakeVisible(newNote);
             notes.add(newNote);
-            notes[i]->setInterceptsMouseClicks(false, true);
+            notes[i]->setInterceptsMouseClicks(true, true);
             notes[i]->reset();
+            //notes[i]->addMouseListener(this, false);
         }
 
         userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
@@ -80,6 +81,16 @@ public:
             updateFrequency();
             backgroundVisualisation->setRoot(rootSlider.getValue());
         };
+        for (int i = 0; i < numbOfIntervals; i++)
+        {
+            notes[i]->onUpdate = [this] {
+                updateFrequency();
+                for (auto i = 0; i < numbOfIntervals; i++)
+                {
+                    notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
+                }
+            };
+        }
 
         createWavetable();
         setSize (800, 600);
@@ -101,18 +112,19 @@ public:
         backgroundVisualisation->setBounds(getBounds());
         for (auto i = 0; i < numbOfIntervals; i++)
         {
-            notes[i]->setBounds(getBounds());
+            notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
         }
     }
 
     void mouseDown(const juce::MouseEvent& event) override
     {
         numbOfClicks++;
+        Logger::outputDebugString(juce::String(numbOfClicks));
         for (int i = 0; i < numbOfIntervals; ++i)
         {
             if (numbOfClicks == (i + 1)) {
                 notes[i]->updatePosition(event.getMouseDownPosition().toFloat());
-                notes[i]->repaint();
+                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
             }
         }
         updateFrequency();
@@ -125,6 +137,7 @@ public:
             for (auto i = 0; i < numbOfIntervals; i++)
             {
                 notes[i]->reset();
+                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
             }
             std::fill(scaleSteps.begin(), scaleSteps.end(), 0.0f);
             std::fill(intervals.begin(), intervals.end(), 0.0f);
@@ -224,8 +237,8 @@ private:
 
     const unsigned int tableSize = 1 << 7;
     const int numbOfIntervals = 8;  //#notes you can play simultaneously
-    const int notesPerOct = 23;
-    const int octaves = 2;
+    int notesPerOct = 19;
+    int octaves = 2;
     float level = 0.25f / (float) numbOfIntervals;
     std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
     std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
@@ -238,7 +251,7 @@ private:
     int numbOfPartials = partialRatios.size();
     int numbOfAmplitudes = amplitudes.size();
     int numbOfClicks = 0;
-
+    
     juce::AudioSampleBuffer sineTable;
     juce::OwnedArray<WavetableOscillator> oscillators;
     juce::OwnedArray<Note> notes;
