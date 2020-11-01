@@ -1,9 +1,8 @@
+
 1) make numberOfNotes, numberOfOctaves, octaves, ... modifiable by the user at runtime
 
 2) convert amplitudes of partials to loudnesses??
 
-3) remove (reset) lying note when clicked without dragging (or when double-clicked?):
-    - maybe use "getDistanceFromDragStart()"-method to decide if user dragged far enough or just a little bit by accident
 
 
 --------GIT COMMANDS:-------

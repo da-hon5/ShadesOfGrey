@@ -20,7 +20,8 @@ public:
 
     ~Note() = default;
 
-    std::function<void()> onUpdate;
+    std::function<void()> noteIsDragged;
+    std::function<void()> noteIsClicked;
 
     void updatePosition(juce::Point<float> pos)
     {
@@ -37,25 +38,32 @@ public:
     {
         g.setColour(juce::Colours::green);
         juce::Rectangle<float> ballArea(0, 0, 25, 25);
-        //ballArea.setCentre(0, 0);
         g.fillEllipse(ballArea);
     }
 
     void mouseDown(const juce::MouseEvent& event) override
     {
-        Logger::outputDebugString("note was clicked");
+        //Logger::outputDebugString("note was clicked");
         mouseDownPosition = getPosition();
 
     }
 
+    void mouseUp(const juce::MouseEvent& event) override
+    {
+        //Logger::outputDebugString("mouse up");
+        if (event.mouseWasClicked()) {
+            noteIsClicked();
+        }
+    }
+
     void mouseDrag(const juce::MouseEvent& event) override
     {
+        //Logger::outputDebugString("note was dragged");
         auto offsetX = event.getDistanceFromDragStartX();
         auto offsetY = event.getDistanceFromDragStartY();
-        //Logger::outputDebugString("new Position:" + juce::String(oldPositionX + offsetX));
-        juce::Point<float> newPosition = juce::Point<float> (mouseDownPosition.getX() + offsetX, mouseDownPosition.getY() + offsetY);
+        juce::Point<float> newPosition = juce::Point<float>(mouseDownPosition.getX() + offsetX, mouseDownPosition.getY() + offsetY);
         updatePosition(newPosition);
-        onUpdate();
+        noteIsDragged();
     }
 
     void reset()

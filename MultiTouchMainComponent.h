@@ -69,7 +69,6 @@ public:
             notes.add(newNote);
             notes[i]->setInterceptsMouseClicks(true, true);
             notes[i]->reset();
-            //notes[i]->addMouseListener(this, false);
         }
 
         userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
@@ -83,14 +82,17 @@ public:
         };
         for (int i = 0; i < numbOfIntervals; i++)
         {
-            notes[i]->onUpdate = [this] {
+            notes[i]->noteIsDragged = [i, this] {
                 updateFrequency();
-                for (auto i = 0; i < numbOfIntervals; i++)
-                {
-                    notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-                }
+                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
+            };
+            notes[i]->noteIsClicked = [i, this] {
+                notes[i]->reset();
+                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
+                updateFrequency();
             };
         }
+
 
         createWavetable();
         setSize (800, 600);
@@ -119,12 +121,19 @@ public:
     void mouseDown(const juce::MouseEvent& event) override
     {
         numbOfClicks++;
-        Logger::outputDebugString(juce::String(numbOfClicks));
-        for (int i = 0; i < numbOfIntervals; ++i)
-        {
-            if (numbOfClicks == (i + 1)) {
-                notes[i]->updatePosition(event.getMouseDownPosition().toFloat());
-                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
+        //Logger::outputDebugString(juce::String(numbOfClicks));
+        if (numbOfClicks < numbOfIntervals) {
+            notes[numbOfClicks]->updatePosition(event.getMouseDownPosition().toFloat());
+            notes[numbOfClicks]->setBounds(notes[numbOfClicks]->getPosition().getX() - 12.5, notes[numbOfClicks]->getPosition().getY() - 12.5, 25, 25);
+        }
+        else {
+            for (int i = 0; i < numbOfIntervals; ++i)
+            {
+                if (notes[i]->getPosition().getX() < 0) {
+                    notes[i]->updatePosition(event.getMouseDownPosition().toFloat());
+                    notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
+                    break;
+                }
             }
         }
         updateFrequency();
@@ -236,7 +245,7 @@ private:
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
     const unsigned int tableSize = 1 << 7;
-    const int numbOfIntervals = 8;  //#notes you can play simultaneously
+    const int numbOfIntervals = 5;  //#notes you can play simultaneously
     int notesPerOct = 19;
     int octaves = 2;
     float level = 0.25f / (float) numbOfIntervals;
