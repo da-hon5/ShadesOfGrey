@@ -57,11 +57,55 @@ class MultiTouchMainComponent : public juce::AudioAppComponent,
 public:
     MultiTouchMainComponent()
     {
-        setWantsKeyboardFocus(true);
-        backgroundVisualisation.reset(new BackgroundVisualisation(numbOfNotes, numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
+        /********************** backgroundVisualisation ********************************/
+        backgroundVisualisation.reset(new BackgroundVisualisation(numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
 
+        /********************** ComboBoxes ********************************/
+        addAndMakeVisible(selectNotesPerOct);
+        for (int i = 2; i <= 100; i++)
+        {
+            selectNotesPerOct.addItem(juce::String(i), i);
+        }
+        selectNotesPerOct.onChange = [this] {
+            notesPerOct = selectNotesPerOct.getSelectedId();
+            backgroundVisualisation->setNotesPerOctave(notesPerOct);
+            numbOfNotes = notesPerOct * octaves;
+        };
+        selectNotesPerOct.setSelectedId(12);
+        addAndMakeVisible(selectOctaves);
+        for (int i = 1; i <= 6; i++)
+        {
+            selectOctaves.addItem(juce::String(i), i);
+        }
+        selectOctaves.onChange = [this] {
+            octaves = selectOctaves.getSelectedId();
+            backgroundVisualisation->setOctaves(octaves);
+            numbOfNotes = notesPerOct * octaves;
+        };
+        selectOctaves.setSelectedId(2);
+
+        /********************** Labels ********************************/
+        addAndMakeVisible(userInstructions);
+        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
+        addAndMakeVisible(selectNotesPerOctLabel);
+        selectNotesPerOctLabel.setText("Notes per Octave", juce::dontSendNotification);
+        selectNotesPerOctLabel.attachToComponent(&selectNotesPerOct, false);
+        addAndMakeVisible(selectOctavesLabel);
+        selectOctavesLabel.setText("Number of Octaves", juce::dontSendNotification);
+        selectOctavesLabel.attachToComponent(&selectOctaves, false);
+
+        /********************** rootSlider ********************************/
+        addAndMakeVisible(rootSlider);
+        rootSlider.setRange(25.0, 400.0);
+        rootSlider.setValue(80);
+        rootSlider.onValueChange = [this] {
+            updateFrequency();
+            backgroundVisualisation->setRoot(rootSlider.getValue());
+        };
+
+        /********************** notes ********************************/
         for (int i = 0; i < numbOfIntervals; i++)
         {
             auto* newNote = new Note();
@@ -70,16 +114,6 @@ public:
             notes[i]->setInterceptsMouseClicks(true, true);
             notes[i]->reset();
         }
-
-        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
-        addAndMakeVisible(userInstructions);
-        addAndMakeVisible(rootSlider);
-        rootSlider.setRange(50.0, 400.0);
-        rootSlider.setValue(80);
-        rootSlider.onValueChange = [this] {
-            updateFrequency();
-            backgroundVisualisation->setRoot(rootSlider.getValue());
-        };
         for (int i = 0; i < numbOfIntervals; i++)
         {
             notes[i]->noteIsDragged = [i, this] {
@@ -93,25 +127,24 @@ public:
             };
         }
 
-
         createWavetable();
         setSize (800, 600);
+        setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
         startTimer (100);
     }
 
-    ~MultiTouchMainComponent() override
-    {
-        shutdownAudio();
-    }
+    ~MultiTouchMainComponent() override { shutdownAudio(); }
 
     void paint(juce::Graphics& g) override {}
 
     void resized() override
     {
-        userInstructions.setBounds(10, 10, getWidth() - 20, 20);
-        rootSlider.setBounds(10, 50, getWidth() - 200, 20);
-        backgroundVisualisation->setBounds(getBounds());
+        userInstructions.setBounds(10, 100, getWidth() - 20, 20);
+        rootSlider.setBounds(10, 70, getWidth() - 200, 20);
+        selectNotesPerOct.setBounds(10, 30, 100, 20);
+        selectOctaves.setBounds(140, 30, 100, 20);
+        backgroundVisualisation->setBounds(0, 100, getWidth(), getHeight() - 100);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
             notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
@@ -121,7 +154,6 @@ public:
     void mouseDown(const juce::MouseEvent& event) override
     {
         numbOfClicks++;
-        //Logger::outputDebugString(juce::String(numbOfClicks));
         if (numbOfClicks < numbOfIntervals) {
             notes[numbOfClicks]->updatePosition(event.getMouseDownPosition().toFloat());
             notes[numbOfClicks]->setBounds(notes[numbOfClicks]->getPosition().getX() - 12.5, notes[numbOfClicks]->getPosition().getY() - 12.5, 25, 25);
@@ -241,13 +273,17 @@ public:
 private:
     juce::Slider rootSlider;
     juce::Label userInstructions;
+    juce::Label selectNotesPerOctLabel;
+    juce::Label selectOctavesLabel;
+    juce::ComboBox selectNotesPerOct;
+    juce::ComboBox selectOctaves;
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
     const unsigned int tableSize = 1 << 7;
     const int numbOfIntervals = 5;  //#notes you can play simultaneously
-    int notesPerOct = 19;
-    int octaves = 2;
+    int notesPerOct = 100; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
+    int octaves = 6;
     float level = 0.25f / (float) numbOfIntervals;
     std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
     std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);

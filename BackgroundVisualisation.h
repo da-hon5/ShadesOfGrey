@@ -14,18 +14,19 @@
 class BackgroundVisualisation : public Component
 {
 public:
-    BackgroundVisualisation(int numberofnotes, int numberofintervals, int octaves, int notesPerOctave, float root, std::vector<float>& partials_ratios, std::vector<float>& amplitudes);
+    BackgroundVisualisation(int numberofintervals, int octaves, int notesPerOctave, float root,
+        std::vector<float>& partials_ratios, std::vector<float>& amplitudes);
 
+    //void setNumberOfNotes(int newNumberofnotes) { numberofnotes = newNumberofnotes; }
     void setPartialRatios(std::vector<float>& newPartialRatios) { partials_ratios = newPartialRatios; }
     void setRoot(float newRoot) { root = newRoot; }
-    void setOctaves(float newOctaves) { octaves = newOctaves; }
-    void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave;  }
+    void setOctaves(int newOctaves) { octaves = newOctaves; numberOfNotes = notesPerOctave * octaves; }
+    void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave; numberOfNotes = notesPerOctave * octaves; }
     void setIntervals(std::vector<float>& intvls);
     void update();
 
 private:
     void paint(Graphics& g) override;
-
     float dissmeasure(std::vector<float>& freq, std::vector<float>& amp);
     std::vector<float> calculate_frequencies();
 
@@ -33,11 +34,11 @@ private:
     int octaves;
     int notesPerOctave;
     int numbofpartials;
-    int numberofnotes;
+    int numberOfNotes;
     int numberofintervals;
-    std::vector<float> dissvector;
-    std::vector<float> partials_ratios;
     std::vector<float> amplitudes;
+    std::vector<float> partials_ratios;
+    std::vector<float> dissvector;
     std::vector<float> intervals;
     std::vector<float> allpartials = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
     std::vector<float> allamplitudes = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);

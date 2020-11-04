@@ -1,7 +1,10 @@
 
 1) make numberOfNotes, numberOfOctaves, octaves, ... modifiable by the user at runtime
+BUG: Program fails when numberOfOctaves selected in ComboBox is higher than initialisation value
+
 
 2) convert amplitudes of partials to loudnesses??
+
 
 
 
