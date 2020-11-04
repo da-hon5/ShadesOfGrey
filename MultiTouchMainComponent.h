@@ -74,6 +74,7 @@ public:
             numbOfNotes = notesPerOct * octaves;
         };
         selectNotesPerOct.setSelectedId(12);
+
         addAndMakeVisible(selectOctaves);
         for (int i = 1; i <= 6; i++)
         {
@@ -86,23 +87,46 @@ public:
         };
         selectOctaves.setSelectedId(2);
 
+        addAndMakeVisible(selectLowestOctave);
+        for (int i = 1; i <= 6; i++)
+        {
+            selectLowestOctave.addItem(juce::String(i - 5), i);
+        }
+        selectLowestOctave.onChange = [this] {
+            lowestOctave = selectLowestOctave.getSelectedId() - 5;
+            root = tuningSlider.getValue() * std::pow(2.0, lowestOctave);
+            updateFrequency();
+            backgroundVisualisation->setRoot(root);
+        };
+        selectLowestOctave.setSelectedId(3);
+
         /********************** Labels ********************************/
         addAndMakeVisible(userInstructions);
         userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
+        addAndMakeVisible(tuningSliderLabel);
+        tuningSliderLabel.setText("Tuning", juce::dontSendNotification);
+        tuningSliderLabel.attachToComponent(&tuningSlider, true);
         addAndMakeVisible(selectNotesPerOctLabel);
         selectNotesPerOctLabel.setText("Notes per Octave", juce::dontSendNotification);
         selectNotesPerOctLabel.attachToComponent(&selectNotesPerOct, false);
         addAndMakeVisible(selectOctavesLabel);
         selectOctavesLabel.setText("Number of Octaves", juce::dontSendNotification);
         selectOctavesLabel.attachToComponent(&selectOctaves, false);
+        addAndMakeVisible(selectLowestOctaveLabel);
+        selectLowestOctaveLabel.setText("Lowest Octave", juce::dontSendNotification);
+        selectLowestOctaveLabel.attachToComponent(&selectLowestOctave, false);
 
-        /********************** rootSlider ********************************/
-        addAndMakeVisible(rootSlider);
-        rootSlider.setRange(25.0, 400.0);
-        rootSlider.setValue(80);
-        rootSlider.onValueChange = [this] {
+        /********************** Sliders ********************************/
+        addAndMakeVisible(tuningSlider);
+        tuningSlider.setRange(350.0, 480.0);
+        tuningSlider.setValue(440);
+        tuningSlider.setTextValueSuffix(" Hz");
+        tuningSlider.setNumDecimalPlacesToDisplay(1);
+        tuningSlider.onValueChange = [this] {
+            tuning = tuningSlider.getValue();
+            root = tuning * std::pow(2.0, lowestOctave);
             updateFrequency();
-            backgroundVisualisation->setRoot(rootSlider.getValue());
+            backgroundVisualisation->setRoot(root);
         };
 
         /********************** notes ********************************/
@@ -141,9 +165,10 @@ public:
     void resized() override
     {
         userInstructions.setBounds(10, 100, getWidth() - 20, 20);
-        rootSlider.setBounds(10, 70, getWidth() - 200, 20);
+        tuningSlider.setBounds(60, 70, getWidth() - 200, 20);
         selectNotesPerOct.setBounds(10, 30, 100, 20);
         selectOctaves.setBounds(140, 30, 100, 20);
+        selectLowestOctave.setBounds(270, 30, 100, 20);
         backgroundVisualisation->setBounds(0, 100, getWidth(), getHeight() - 100);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
@@ -222,7 +247,7 @@ public:
 
     void updateFrequency()
     {
-        root = rootSlider.getValue();
+        //root = tuningSlider.getValue();
         for (int i = 0; i < numbOfIntervals; i++) {
             if (notes[i]->getPosition().getX() < 0) {
                 intervals[i] = 0.0f;
@@ -271,12 +296,15 @@ public:
     }
 
 private:
-    juce::Slider rootSlider;
+    juce::Slider tuningSlider;
+    juce::Label tuningSliderLabel;
     juce::Label userInstructions;
     juce::Label selectNotesPerOctLabel;
     juce::Label selectOctavesLabel;
+    juce::Label selectLowestOctaveLabel;
     juce::ComboBox selectNotesPerOct;
     juce::ComboBox selectOctaves;
+    juce::ComboBox selectLowestOctave;
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
 
@@ -284,6 +312,10 @@ private:
     const int numbOfIntervals = 5;  //#notes you can play simultaneously
     int notesPerOct = 100; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
     int octaves = 6;
+    int numbOfNotes = notesPerOct * octaves;
+    int lowestOctave = -1;
+    float tuning = 440;
+    float root = lowestOctave * tuning;
     float level = 0.25f / (float) numbOfIntervals;
     std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
     std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
@@ -291,8 +323,6 @@ private:
     std::vector<float> partialRatios = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     std::vector<float> amplitudes = { 1, 0.5, 0.33, 0.25, 0.2, 0.4, 0.7, 0.1, 0.5, 0.6 };
     double currentSampleRate = 0.0f;
-    float root = 0.0f; 
-    int numbOfNotes = notesPerOct * octaves;
     int numbOfPartials = partialRatios.size();
     int numbOfAmplitudes = amplitudes.size();
     int numbOfClicks = 0;
