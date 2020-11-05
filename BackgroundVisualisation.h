@@ -19,6 +19,7 @@ public:
 
     //void setNumberOfNotes(int newNumberofnotes) { numberofnotes = newNumberofnotes; }
     void setPartialRatios(std::vector<float>& newPartialRatios) { partials_ratios = newPartialRatios; }
+    void setAmplitudes(std::vector<float>& newAmplitudes) { amplitudes = newAmplitudes; }
     void setRoot(float newRoot) { root = newRoot; }
     void setOctaves(int newOctaves) { octaves = newOctaves; numberOfNotes = notesPerOctave * octaves; }
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave; numberOfNotes = notesPerOctave * octaves; }

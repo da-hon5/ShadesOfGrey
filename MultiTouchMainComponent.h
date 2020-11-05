@@ -1,21 +1,3 @@
-/*
-  ==============================================================================
-
-   This file is part of the JUCE tutorials.
-   Copyright (c) 2017 - ROLI Ltd.
-
-   The code included in this file is provided under the terms of the ISC license
-   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
-   To use, copy, modify, and/or distribute this software for any purpose with or
-   without fee is hereby granted provided that the above copyright notice and
-   this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES,
-   WHETHER EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR
-   PURPOSE, ARE DISCLAIMED.
-
-  ==============================================================================
-*/
 
 /*******************************************************************************
  The block below describes the properties of this PIP. A PIP is a short snippet
@@ -23,11 +5,8 @@
 
  BEGIN_JUCE_PIP_METADATA
 
- name:             WavetableSynthTutorial
- version:          4.0.0
- vendor:           JUCE
- website:          http://juce.com
- description:      Wavetable synthesiser.
+ name:             MultiTouchInstrument
+ description:      A Multi Touch Instrument with Visual Feedback
 
  dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats,
                    juce_audio_processors, juce_audio_utils, juce_core,
@@ -74,37 +53,52 @@ public:
         currentSampleRate = 0.0f;
         numbOfClicks = 0;
 
-        //// sawtooth wave:
-        for (int i = 0; i < numbOfPartials; ++i)
-        {
-            partialRatios[i] = (float) i + 1;
-            amplitudes[i] = 1 / ((float) i + 1);
-        }
-
-        // square wave:
-        /*for (int i = 0; i < numbOfPartials; ++i)
-        {
-            partialRatios[i] = 2 * (float) i + 1;
-            amplitudes[i] = 1 / ((float) i + 1);
-        }*/
-
         // choose other (inharmonic) spectrum here:
         /*partialRatios = { 1, 2.3, 3.1, 3.6, 5.5, 5.6, 7.09 };
         amplitudes = { 1, 0.5, 0.33, 0.25, 0.75, 0.4, 0.2 };
         numbOfPartials = partialRatios.size();
-        jassert(numbOfPartials == amplitudes.size());*/
-
-        float sumOfAmplitudes = 0.0f;
-        for (int i = 0; i < numbOfPartials; ++i)
-        {
-            sumOfAmplitudes += amplitudes[i];
-        }
-        level = 0.9f / (float)(numbOfIntervals * sumOfAmplitudes);
+        jassert(numbOfPartials == amplitudes.size());
+        calculateLevel();*/
 
         /********************** backgroundVisualisation ********************************/
         backgroundVisualisation.reset(new BackgroundVisualisation(numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
+
+        /********************** Buttons ********************************/
+        addAndMakeVisible(sawtoothButton);
+        addAndMakeVisible(squareButton);
+        sawtoothButton.setClickingTogglesState(true);
+        squareButton.setClickingTogglesState(true);
+        sawtoothButton.onClick = [this] { 
+            if (sawtoothButton.getToggleState())
+            {
+                for (int i = 0; i < numbOfPartials; ++i)
+                {
+                    partialRatios[i] = (float)i + 1;
+                    amplitudes[i] = 1 / ((float)i + 1);
+                }
+                calculateLevel();
+                backgroundVisualisation->setPartialRatios(partialRatios);
+                backgroundVisualisation->setAmplitudes(amplitudes);
+            }
+        };
+        squareButton.onClick = [this] { 
+            if (squareButton.getToggleState())
+            {
+                for (int i = 0; i < numbOfPartials; ++i)
+                {
+                    partialRatios[i] = 2 * (float)i + 1;
+                    amplitudes[i] = 1 / ((float)i + 1);
+                }
+                calculateLevel();
+                backgroundVisualisation->setPartialRatios(partialRatios);
+                backgroundVisualisation->setAmplitudes(amplitudes);
+            }
+        };
+        sawtoothButton.setRadioGroupId(1);
+        squareButton.setRadioGroupId(1);
+        sawtoothButton.triggerClick();
 
         /********************** ComboBoxes ********************************/
         addAndMakeVisible(selectOctaves);
@@ -200,10 +194,22 @@ public:
         setAudioChannels (0, 2); // no inputs, two outputs
         startTimer (100);
     }
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// END OF CONSTRUCTOR /////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ~MultiTouchMainComponent() override { shutdownAudio(); }
 
     void paint(juce::Graphics& g) override {}
+
+    void calculateLevel()
+    {
+        float sumOfAmplitudes = 0.0f;
+        for (int i = 0; i < numbOfPartials; ++i)
+        {
+            sumOfAmplitudes += amplitudes[i];
+        }
+        level = 0.9f / (float)(numbOfIntervals * sumOfAmplitudes);
+    }
 
     void resized() override
     {
@@ -212,6 +218,8 @@ public:
         selectNotesPerOct.setBounds(10, 30, 100, 20);
         selectOctaves.setBounds(140, 30, 100, 20);
         selectLowestOctave.setBounds(270, 30, 100, 20);
+        sawtoothButton.setBounds(390, 10, 100, 20);
+        squareButton.setBounds(390, 30, 100, 20);
         backgroundVisualisation->setBounds(0, 100, getWidth(), getHeight() - 100);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
@@ -324,6 +332,8 @@ private:
     juce::ComboBox selectNotesPerOct;
     juce::ComboBox selectOctaves;
     juce::ComboBox selectLowestOctave;
+    juce::ToggleButton sawtoothButton{ "Sawtooth" };
+    juce::ToggleButton squareButton{ "Square" };
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
     juce::OwnedArray<SineOscillator> oscillators;
