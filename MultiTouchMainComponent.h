@@ -46,7 +46,7 @@
 
 
 #pragma once
-#include "WavetableOscillator.h"
+#include "SineOscillator.h"
 #include "BackgroundVisualisation.h"
 #include "Note.h"
 
@@ -57,24 +57,56 @@ class MultiTouchMainComponent : public juce::AudioAppComponent,
 public:
     MultiTouchMainComponent()
     {
+        /********************** Initialize Member Variables ********************************/
+        numbOfIntervals = 5;  //#notes you can play simultaneously
+        notesPerOct = 100; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
+        octaves = 6;
+        numbOfNotes = notesPerOct * octaves;
+        lowestOctave = -1;
+        tuning = 440;
+        root = lowestOctave * tuning;
+        numbOfPartials = 5;
+        freq = std::vector<float>(numbOfIntervals, 0.0f);
+        intervals = std::vector<float>(numbOfIntervals, 0.0f);
+        scaleSteps = std::vector<float>(numbOfIntervals, 0.0f);
+        partialRatios = std::vector<float>(numbOfPartials, 0.0f);
+        amplitudes = std::vector<float>(numbOfPartials, 0.0f);
+        currentSampleRate = 0.0f;
+        numbOfClicks = 0;
+
+        //// sawtooth wave:
+        for (int i = 0; i < numbOfPartials; ++i)
+        {
+            partialRatios[i] = (float) i + 1;
+            amplitudes[i] = 1 / ((float) i + 1);
+        }
+
+        // square wave:
+        /*for (int i = 0; i < numbOfPartials; ++i)
+        {
+            partialRatios[i] = 2 * (float) i + 1;
+            amplitudes[i] = 1 / ((float) i + 1);
+        }*/
+
+        // choose other (inharmonic) spectrum here:
+        /*partialRatios = { 1, 2.3, 3.1, 3.6, 5.5, 5.6, 7.09 };
+        amplitudes = { 1, 0.5, 0.33, 0.25, 0.75, 0.4, 0.2 };
+        numbOfPartials = partialRatios.size();
+        jassert(numbOfPartials == amplitudes.size());*/
+
+        float sumOfAmplitudes = 0.0f;
+        for (int i = 0; i < numbOfPartials; ++i)
+        {
+            sumOfAmplitudes += amplitudes[i];
+        }
+        level = 0.9f / (float)(numbOfIntervals * sumOfAmplitudes);
+
         /********************** backgroundVisualisation ********************************/
         backgroundVisualisation.reset(new BackgroundVisualisation(numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
 
         /********************** ComboBoxes ********************************/
-        addAndMakeVisible(selectNotesPerOct);
-        for (int i = 2; i <= 100; i++)
-        {
-            selectNotesPerOct.addItem(juce::String(i), i);
-        }
-        selectNotesPerOct.onChange = [this] {
-            notesPerOct = selectNotesPerOct.getSelectedId();
-            backgroundVisualisation->setNotesPerOctave(notesPerOct);
-            numbOfNotes = notesPerOct * octaves;
-        };
-        selectNotesPerOct.setSelectedId(12);
-
         addAndMakeVisible(selectOctaves);
         for (int i = 1; i <= 6; i++)
         {
@@ -86,6 +118,18 @@ public:
             numbOfNotes = notesPerOct * octaves;
         };
         selectOctaves.setSelectedId(2);
+
+        addAndMakeVisible(selectNotesPerOct);
+        for (int i = 2; i <= 100; i++)
+        {
+            selectNotesPerOct.addItem(juce::String(i), i);
+        }
+        selectNotesPerOct.onChange = [this] {
+            notesPerOct = selectNotesPerOct.getSelectedId();
+            backgroundVisualisation->setNotesPerOctave(notesPerOct);
+            numbOfNotes = notesPerOct * octaves;
+        };
+        selectNotesPerOct.setSelectedId(12);
 
         addAndMakeVisible(selectLowestOctave);
         for (int i = 1; i <= 6; i++)
@@ -151,7 +195,6 @@ public:
             };
         }
 
-        createWavetable();
         setSize (800, 600);
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
@@ -220,31 +263,6 @@ public:
         backgroundVisualisation->repaint();
     }
 
-    void createWavetable()
-    {
-        sineTable.setSize (1, (int) tableSize + 1);
-        sineTable.clear();
-
-        auto* samples = sineTable.getWritePointer (0);
-
-        jassert (partialRatios.size() == amplitudes.size());
-
-        for (auto harmonic = 0; harmonic < partialRatios.size(); ++harmonic)
-        {
-            //doesn't work with non-integer harmonics => sinus wird irgendwo abgeschnitten (nicht beim nulldurchgang)
-            float angleDelta = juce::MathConstants<double>::twoPi / (double)tableSize * partialRatios[harmonic];
-            auto currentAngle = 0.0;
-
-            for (unsigned int i = 0; i < tableSize; ++i)
-            {
-                auto sample = std::sin (currentAngle);
-                samples[i] += (float) sample * amplitudes[harmonic];
-                currentAngle += angleDelta;
-            }
-        }
-        samples[tableSize] = samples[0];
-    }
-
     void updateFrequency()
     {
         //root = tuningSlider.getValue();
@@ -265,8 +283,8 @@ public:
     void prepareToPlay (int, double sampleRate) override
     {
         currentSampleRate = sampleRate;
-        for (auto i = 0; i < numbOfIntervals; ++i) {
-            auto* oscillator = new WavetableOscillator(sineTable);
+        for (auto i = 0; i < numbOfIntervals * numbOfPartials; ++i) {
+            auto* oscillator = new SineOscillator();
             oscillators.add(oscillator);
         } 
     }
@@ -280,17 +298,18 @@ public:
 
         bufferToFill.clearActiveBufferRegion();
 
-        for (auto oscillatorIndex = 0; oscillatorIndex < numbOfIntervals; ++oscillatorIndex)
+        for (auto noteIndex = 0; noteIndex < numbOfIntervals; ++noteIndex)
         {
-            auto* oscillator = oscillators.getUnchecked (oscillatorIndex);
-            oscillator->setFrequency((float)freq[oscillatorIndex], (float)currentSampleRate); //set frequency for each oscillator
-
-            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+            for (int partial = 0; partial < numbOfPartials; ++partial)
             {
-                auto levelSample = oscillator->getNextSample() * level;
-
-                leftBuffer[sample]  += levelSample;
-                rightBuffer[sample] += levelSample;
+                auto* oscillator = oscillators.getUnchecked((noteIndex * numbOfPartials) + partial);
+                oscillator->setFrequency(freq[noteIndex] * partialRatios[partial], currentSampleRate); //set frequency for each oscillator
+                for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+                {
+                    auto levelSample = oscillator->getNextSample() * level * amplitudes[partial];
+                    leftBuffer[sample] += levelSample;
+                    rightBuffer[sample] += levelSample;
+                }
             }
         }
     }
@@ -307,29 +326,25 @@ private:
     juce::ComboBox selectLowestOctave;
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
-
-    const unsigned int tableSize = 1 << 7;
-    const int numbOfIntervals = 5;  //#notes you can play simultaneously
-    int notesPerOct = 100; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
-    int octaves = 6;
-    int numbOfNotes = notesPerOct * octaves;
-    int lowestOctave = -1;
-    float tuning = 440;
-    float root = lowestOctave * tuning;
-    float level = 0.25f / (float) numbOfIntervals;
-    std::vector<float> freq = std::vector<float>(numbOfIntervals, 0.0f); //vector with length numbOfIntervals and all zeros
-    std::vector<float> intervals = std::vector<float>(numbOfIntervals, 0.0f);
-    std::vector<float> scaleSteps = std::vector<float>(numbOfIntervals, 0.0f);
-    std::vector<float> partialRatios = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    std::vector<float> amplitudes = { 1, 0.5, 0.33, 0.25, 0.2, 0.4, 0.7, 0.1, 0.5, 0.6 };
-    double currentSampleRate = 0.0f;
-    int numbOfPartials = partialRatios.size();
-    int numbOfAmplitudes = amplitudes.size();
-    int numbOfClicks = 0;
-    
-    juce::AudioSampleBuffer sineTable;
-    juce::OwnedArray<WavetableOscillator> oscillators;
+    juce::OwnedArray<SineOscillator> oscillators;
     juce::OwnedArray<Note> notes;
-    
+
+    int numbOfIntervals;
+    int notesPerOct;
+    int octaves;
+    int numbOfNotes;
+    int lowestOctave;
+    float tuning;
+    float root;
+    int numbOfPartials;
+    std::vector<float> freq;
+    std::vector<float> intervals;
+    std::vector<float> scaleSteps;
+    std::vector<float> partialRatios;
+    std::vector<float> amplitudes;
+    double currentSampleRate;
+    float level;
+    int numbOfClicks;
+        
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultiTouchMainComponent)
 };

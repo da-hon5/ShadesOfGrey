@@ -1,6 +1,8 @@
 
 1) convert amplitudes of partials to loudnesses??
 
+2) create gui for the user to change the spectrum
+
 
 
 
