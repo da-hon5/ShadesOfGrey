@@ -22,7 +22,9 @@ numberofintervals(numberofintervals),
 amplitudes(amplitudes),
 partials_ratios(partials_ratios),
 dissvector(std::vector<float>(numberOfNotes + 1)),
-intervals(std::vector<float>(numberofintervals))
+intervals(std::vector<float>(numberofintervals)),
+allpartials(std::vector<float>((numberofintervals + 1)* numbofpartials, 0.0f)),
+allamplitudes(std::vector<float>((numberofintervals + 1)* numbofpartials, 0.0f))
 {
 }
 
@@ -86,7 +88,6 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
     float f_dif = 0.0f;
 
     const int N = freq.size();
-
     jassert(freq.size() == amp.size());
 
     /*std::vector<float> SPL(N);
@@ -114,6 +115,5 @@ std::vector<float> BackgroundVisualisation::calculate_frequencies()
             allpartials[i + (j * numbofpartials)] = root * partials_ratios[i] * intervals[j];
         }
     }
-    
     return allpartials;
 }

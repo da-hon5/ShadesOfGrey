@@ -44,7 +44,7 @@ public:
         lowestOctave = -1;
         tuning = 440;
         root = lowestOctave * tuning;
-        numbOfPartials = 5;
+        numbOfPartials = 20; //BUG: initialize numbOfPartials with maxNumbOfPartials => otherwise Error
         freq = std::vector<float>(numbOfIntervals, 0.0f);
         intervals = std::vector<float>(numbOfIntervals, 0.0f);
         scaleSteps = std::vector<float>(numbOfIntervals, 0.0f);
@@ -52,6 +52,7 @@ public:
         amplitudes = std::vector<float>(numbOfPartials, 0.0f);
         currentSampleRate = 0.0f;
         numbOfClicks = 0;
+        spectrumId = 1;
 
         // choose other (inharmonic) spectrum here:
         /*partialRatios = { 1, 2.3, 3.1, 3.6, 5.5, 5.6, 7.09 };
@@ -68,37 +69,42 @@ public:
         /********************** Buttons ********************************/
         addAndMakeVisible(sawtoothButton);
         addAndMakeVisible(squareButton);
+        addAndMakeVisible(triangleButton);
+        addAndMakeVisible(randomButton);
         sawtoothButton.setClickingTogglesState(true);
         squareButton.setClickingTogglesState(true);
+        triangleButton.setClickingTogglesState(true);
+        randomButton.setClickingTogglesState(true);
         sawtoothButton.onClick = [this] { 
             if (sawtoothButton.getToggleState())
             {
-                for (int i = 0; i < numbOfPartials; ++i)
-                {
-                    partialRatios[i] = (float)i + 1;
-                    amplitudes[i] = 1 / ((float)i + 1);
-                }
-                calculateLevel();
-                backgroundVisualisation->setPartialRatios(partialRatios);
-                backgroundVisualisation->setAmplitudes(amplitudes);
+                spectrumId = 1;
+                calculateSpectrum();
             }
         };
         squareButton.onClick = [this] { 
             if (squareButton.getToggleState())
             {
-                for (int i = 0; i < numbOfPartials; ++i)
-                {
-                    partialRatios[i] = 2 * (float)i + 1;
-                    amplitudes[i] = 1 / ((float)i + 1);
-                }
-                calculateLevel();
-                backgroundVisualisation->setPartialRatios(partialRatios);
-                backgroundVisualisation->setAmplitudes(amplitudes);
+                spectrumId = 2;
+                calculateSpectrum();
             }
+        };
+        triangleButton.onClick = [this] {
+            if (triangleButton.getToggleState())
+            {
+                spectrumId = 3;
+                calculateSpectrum();
+            }
+        };
+        randomButton.onClick = [this] {
+            spectrumId = 4;
+            calculateSpectrum();
         };
         sawtoothButton.setRadioGroupId(1);
         squareButton.setRadioGroupId(1);
-        sawtoothButton.triggerClick();
+        triangleButton.setRadioGroupId(1);
+        randomButton.setRadioGroupId(1);
+        sawtoothButton.triggerClick(); //sawtooth = default
 
         /********************** ComboBoxes ********************************/
         addAndMakeVisible(selectOctaves);
@@ -138,6 +144,17 @@ public:
         };
         selectLowestOctave.setSelectedId(3);
 
+        addAndMakeVisible(selectNumbOfPartials);
+        for (int i = 1; i <= 20; i++)
+        {
+            selectNumbOfPartials.addItem(juce::String(i), i);
+        }
+        selectNumbOfPartials.onChange = [this] {
+            numbOfPartials = selectNumbOfPartials.getSelectedId();
+            calculateSpectrum();
+        };
+        selectNumbOfPartials.setSelectedId(8);
+
         /********************** Labels ********************************/
         addAndMakeVisible(userInstructions);
         userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
@@ -153,6 +170,9 @@ public:
         addAndMakeVisible(selectLowestOctaveLabel);
         selectLowestOctaveLabel.setText("Lowest Octave", juce::dontSendNotification);
         selectLowestOctaveLabel.attachToComponent(&selectLowestOctave, false);
+        addAndMakeVisible(selectNumbOfPartialsLabel);
+        selectNumbOfPartialsLabel.setText("Number of Partials", juce::dontSendNotification);
+        selectNumbOfPartialsLabel.attachToComponent(&selectNumbOfPartials, false);
 
         /********************** Sliders ********************************/
         addAndMakeVisible(tuningSlider);
@@ -211,15 +231,55 @@ public:
         level = 0.9f / (float)(numbOfIntervals * sumOfAmplitudes);
     }
 
+    void calculateSpectrum()
+    {
+        partialRatios = std::vector<float>(numbOfPartials, 0.0f);
+        amplitudes = std::vector<float>(numbOfPartials, 0.0f);
+        if (spectrumId == 1) { //sawtooth
+            for (int i = 0; i < numbOfPartials; ++i)
+            {
+                partialRatios[i] = (float)i + 1;
+                amplitudes[i] = 1 / ((float)i + 1);
+            }
+        }
+        else if (spectrumId == 2) { //square
+            for (int i = 0; i < numbOfPartials; ++i)
+            {
+                partialRatios[i] = 2 * (float)i + 1;
+                amplitudes[i] = 1 / ((float)i + 1);
+            }
+        }
+        else if (spectrumId == 3) { //triangle
+            for (int i = 0; i < numbOfPartials; ++i)
+            {
+                partialRatios[i] = 2 * (float)i + 1;
+                amplitudes[i] = 1 / (float)std::pow(i + 1, 2);
+            }
+        }
+        else if (spectrumId == 4) { //random
+            for (int i = 0; i < numbOfPartials; ++i)
+            {
+                partialRatios[i] = juce::Random::getSystemRandom().nextFloat() * numbOfPartials;
+                amplitudes[i] = juce::Random::getSystemRandom().nextFloat();
+            }
+        }
+        backgroundVisualisation->setPartialRatios(partialRatios);
+        backgroundVisualisation->setAmplitudes(amplitudes);
+        calculateLevel();
+    }
+
     void resized() override
     {
         userInstructions.setBounds(10, 100, getWidth() - 20, 20);
-        tuningSlider.setBounds(60, 70, getWidth() - 200, 20);
+        tuningSlider.setBounds(60, 70, 400, 20);
         selectNotesPerOct.setBounds(10, 30, 100, 20);
         selectOctaves.setBounds(140, 30, 100, 20);
         selectLowestOctave.setBounds(270, 30, 100, 20);
-        sawtoothButton.setBounds(390, 10, 100, 20);
-        squareButton.setBounds(390, 30, 100, 20);
+        selectNumbOfPartials.setBounds(400, 30, 100, 20);
+        sawtoothButton.setBounds(530, 10, 70, 20);
+        squareButton.setBounds(530, 30, 70, 20);
+        triangleButton.setBounds(530, 50, 70, 20);
+        randomButton.setBounds(530, 70, 70, 20);
         backgroundVisualisation->setBounds(0, 100, getWidth(), getHeight() - 100);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
@@ -273,7 +333,6 @@ public:
 
     void updateFrequency()
     {
-        //root = tuningSlider.getValue();
         for (int i = 0; i < numbOfIntervals; i++) {
             if (notes[i]->getPosition().getX() < 0) {
                 intervals[i] = 0.0f;
@@ -329,11 +388,15 @@ private:
     juce::Label selectNotesPerOctLabel;
     juce::Label selectOctavesLabel;
     juce::Label selectLowestOctaveLabel;
+    juce::Label selectNumbOfPartialsLabel;
     juce::ComboBox selectNotesPerOct;
     juce::ComboBox selectOctaves;
     juce::ComboBox selectLowestOctave;
-    juce::ToggleButton sawtoothButton{ "Sawtooth" };
-    juce::ToggleButton squareButton{ "Square" };
+    juce::ComboBox selectNumbOfPartials;
+    juce::TextButton sawtoothButton{ "Sawtooth" };
+    juce::TextButton squareButton{ "Square" };
+    juce::TextButton triangleButton{ "Triangle" };
+    juce::TextButton randomButton{ "Random" };
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
     juce::OwnedArray<SineOscillator> oscillators;
@@ -355,6 +418,7 @@ private:
     double currentSampleRate;
     float level;
     int numbOfClicks;
+    int spectrumId;
         
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultiTouchMainComponent)
 };
