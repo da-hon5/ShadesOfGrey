@@ -38,7 +38,7 @@ public:
     {
         /********************** Initialize Member Variables ********************************/
         numbOfIntervals = 5;  //#notes you can play simultaneously
-        notesPerOct = 100; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
+        notesPerOct = 120; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
         octaves = 6;
         numbOfNotes = notesPerOct * octaves;
         lowestOctave = -1;
@@ -120,7 +120,7 @@ public:
         selectOctaves.setSelectedId(2);
 
         addAndMakeVisible(selectNotesPerOct);
-        for (int i = 2; i <= 100; i++)
+        for (int i = 2; i <= 120; i++)
         {
             selectNotesPerOct.addItem(juce::String(i), i);
         }
@@ -151,6 +151,8 @@ public:
         }
         selectNumbOfPartials.onChange = [this] {
             numbOfPartials = selectNumbOfPartials.getSelectedId();
+            partialRatios = std::vector<float>(numbOfPartials, 0.0f);
+            amplitudes = std::vector<float>(numbOfPartials, 0.0f);
             calculateSpectrum();
         };
         selectNumbOfPartials.setSelectedId(8);
@@ -233,8 +235,6 @@ public:
 
     void calculateSpectrum()
     {
-        partialRatios = std::vector<float>(numbOfPartials, 0.0f);
-        amplitudes = std::vector<float>(numbOfPartials, 0.0f);
         if (spectrumId == 1) { //sawtooth
             for (int i = 0; i < numbOfPartials; ++i)
             {
@@ -370,7 +370,7 @@ public:
             for (int partial = 0; partial < numbOfPartials; ++partial)
             {
                 auto* oscillator = oscillators.getUnchecked((noteIndex * numbOfPartials) + partial);
-                oscillator->setFrequency(freq[noteIndex] * partialRatios[partial], currentSampleRate); //set frequency for each oscillator
+                oscillator->setFrequency(freq[noteIndex] * partialRatios[partial], currentSampleRate);
                 for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
                 {
                     auto levelSample = oscillator->getNextSample() * level * amplitudes[partial];
