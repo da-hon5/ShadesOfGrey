@@ -3,6 +3,7 @@
 
 2) create gui for the user to change the spectrum
 
+3) implement multi touch !!!
 
 
 
