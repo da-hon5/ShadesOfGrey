@@ -37,7 +37,7 @@ public:
     MultiTouchMainComponent()
     {
         /********************** Initialize Member Variables ********************************/
-        numbOfIntervals = 5;  //#notes you can play simultaneously
+        numbOfIntervals = 10;  //#notes you can play simultaneously
         notesPerOct = 120; //BUG: initialize notesPerOct with maxNotesPerOct => otherwise Error
         octaves = 6;
         numbOfNotes = notesPerOct * octaves;
@@ -51,7 +51,6 @@ public:
         partialRatios = std::vector<float>(numbOfPartials, 0.0f);
         amplitudes = std::vector<float>(numbOfPartials, 0.0f);
         currentSampleRate = 0.0f;
-        numbOfClicks = 0;
         spectrumId = 1;
 
         // choose other (inharmonic) spectrum here:
@@ -159,7 +158,7 @@ public:
 
         /********************** Labels ********************************/
         addAndMakeVisible(userInstructions);
-        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your mouse! Press 'blank key' to remove all notes!", juce::dontSendNotification);
+        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your fingers!", juce::dontSendNotification);
         addAndMakeVisible(tuningSliderLabel);
         tuningSliderLabel.setText("Tuning", juce::dontSendNotification);
         tuningSliderLabel.attachToComponent(&tuningSlider, true);
@@ -195,20 +194,20 @@ public:
             auto* newNote = new Note();
             addAndMakeVisible(newNote);
             notes.add(newNote);
-            notes[i]->setInterceptsMouseClicks(true, true);
+            notes[i]->setInterceptsMouseClicks(false, false);
             notes[i]->reset();
         }
         for (int i = 0; i < numbOfIntervals; i++)
         {
-            notes[i]->noteIsDragged = [i, this] {
+            /*notes[i]->noteIsDragged = [i, this] {
                 updateFrequency();
                 notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-            };
-            notes[i]->noteIsClicked = [i, this] {
+            };*/
+            /*notes[i]->noteIsClicked = [i, this] {
                 notes[i]->reset();
                 notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
                 updateFrequency();
-            };
+            };*/
         }
 
         setSize (800, 600);
@@ -289,28 +288,30 @@ public:
 
     void mouseDown(const juce::MouseEvent& event) override
     {
-        numbOfClicks++;
-        if (numbOfClicks < numbOfIntervals) {
-            notes[numbOfClicks]->updatePosition(event.getMouseDownPosition().toFloat());
-            notes[numbOfClicks]->setBounds(notes[numbOfClicks]->getPosition().getX() - 12.5, notes[numbOfClicks]->getPosition().getY() - 12.5, 25, 25);
-        }
-        else {
-            for (int i = 0; i < numbOfIntervals; ++i)
-            {
-                if (notes[i]->getPosition().getX() < 0) {
-                    notes[i]->updatePosition(event.getMouseDownPosition().toFloat());
-                    notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-                    break;
-                }
-            }
-        }
+        //Logger::outputDebugString(juce::String(event.source.getIndex()) + "is clicked");
+        notes[event.source.getIndex()]->updatePosition(event.position);
+        notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
+        updateFrequency();
+    }
+
+    void mouseDrag(const juce::MouseEvent& event) override
+    {
+        notes[event.source.getIndex()]->updatePosition(event.position);
+        updateFrequency();
+        notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
+    }
+
+    void mouseUp(const juce::MouseEvent& event) override
+    {
+        //Logger::outputDebugString(juce::String(event.source.getIndex()) + "is released");
+        notes[event.source.getIndex()]->reset();
+        notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
         updateFrequency();
     }
 
     bool keyPressed(const KeyPress& k) override 
     {
         if (k.getTextCharacter() == ' ') {
-            numbOfClicks = 0;
             for (auto i = 0; i < numbOfIntervals; i++)
             {
                 notes[i]->reset();
@@ -319,10 +320,9 @@ public:
             std::fill(scaleSteps.begin(), scaleSteps.end(), 0.0f);
             std::fill(intervals.begin(), intervals.end(), 0.0f);
             std::fill(freq.begin(), freq.end(), 0.0f);
-
         } 
         updateFrequency();
-        return 0;
+        return true;
     }
 
     void timerCallback() override
@@ -417,7 +417,6 @@ private:
     std::vector<float> amplitudes;
     double currentSampleRate;
     float level;
-    int numbOfClicks;
     int spectrumId;
         
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultiTouchMainComponent)
