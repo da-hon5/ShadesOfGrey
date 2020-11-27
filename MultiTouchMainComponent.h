@@ -32,7 +32,7 @@
 
 //==============================================================================
 class MultiTouchMainComponent : public juce::AudioAppComponent,
-                                public juce::Timer
+                                public juce::MultiTimer
 {
     const int maxNumberOfPartials = 20;
 public:
@@ -145,6 +145,7 @@ public:
             root = tuningSlider.getValue() * std::pow(2.0, lowestOctave);
             updateFrequency();
             backgroundVisualisation->setRoot(root);
+            dissonanceCurve->setRoot(root);
         };
         selectLowestOctave.setSelectedId(3);
 
@@ -159,13 +160,15 @@ public:
             std::vector<float> amplitudes = { maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
             backgroundVisualisation->setPartialRatios(partialRatios);
             backgroundVisualisation->setAmplitudes(amplitudes);
+            dissonanceCurve->setPartialRatios(partialRatios);
+            dissonanceCurve->setAmplitudes(amplitudes);
             calculateSpectrum();
         };
         selectNumbOfPartials.setSelectedId(8);
 
         /********************** Labels ********************************/
         addAndMakeVisible(userInstructions);
-        userInstructions.setText("Place up to " + juce::String(numbOfIntervals) + " notes with your fingers!", juce::dontSendNotification);
+        userInstructions.setText("Play up to " + juce::String(numbOfIntervals) + " notes with your fingers!", juce::dontSendNotification);
         addAndMakeVisible(tuningSliderLabel);
         tuningSliderLabel.setText("Tuning", juce::dontSendNotification);
         tuningSliderLabel.attachToComponent(&tuningSlider, true);
@@ -193,10 +196,11 @@ public:
             root = tuning * std::pow(2.0, lowestOctave);
             updateFrequency();
             backgroundVisualisation->setRoot(root);
+            dissonanceCurve->setRoot(root);
         };
 
         /********************** DissonanceCurve ********************************/
-        dissonanceCurve.reset(new DissonanceCurve(notesPerOct));
+        dissonanceCurve.reset(new DissonanceCurve(notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(dissonanceCurve.get());
 
         /********************** notes ********************************/
@@ -209,10 +213,11 @@ public:
             notes[i]->reset();
         }
      
-        setSize (1000, 600);
+        setSize(1000, 600);
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
-        startTimer (100);
+        startTimer(1, 100);
+        startTimer(2, 2000);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// END OF CONSTRUCTOR /////////////////////////////////////////////////////////////////
@@ -265,12 +270,14 @@ public:
         std::vector<float> amplitudes = { maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
         backgroundVisualisation->setPartialRatios(partialRatios);
         backgroundVisualisation->setAmplitudes(amplitudes);
+        dissonanceCurve->setPartialRatios(partialRatios);
+        dissonanceCurve->setAmplitudes(amplitudes);
         calculateLevel();
     }
 
     void resized() override
     {
-        userInstructions.setBounds(10, 125, getWidth() - 20, 20);
+        userInstructions.setBounds(10, 140, getWidth() - 20, 20);
         tuningSlider.setBounds(60, 85, 400, 20);
         selectNotesPerOct.setBounds(10, 30, 120, 30);
         selectOctaves.setBounds(140, 30, 120, 30);
@@ -280,8 +287,8 @@ public:
         squareButton.setBounds(530, 50, 70, 30);
         triangleButton.setBounds(615, 10, 70, 30);
         randomButton.setBounds(615, 50, 70, 30);
-        backgroundVisualisation->setBounds(0, 120, getWidth(), getHeight() - 120);
-        dissonanceCurve->setBounds(730, 10, 160, 100);
+        backgroundVisualisation->setBounds(0, 140, getWidth(), getHeight() - 140);
+        dissonanceCurve->setBounds(720, 10, 200, 120);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
             notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
@@ -327,11 +334,16 @@ public:
         return true;
     }
 
-    void timerCallback() override
-    { 
-        backgroundVisualisation->update();
-        backgroundVisualisation->repaint();
-        dissonanceCurve->repaint();
+    void timerCallback(int timerID) override
+    {
+        if (timerID == 1) {
+            backgroundVisualisation->update();
+            backgroundVisualisation->repaint();
+        }
+        else {
+            dissonanceCurve->update();
+            dissonanceCurve->repaint();
+        }
     }
 
     void updateFrequency()
@@ -376,7 +388,7 @@ public:
                 oscillator->setFrequency(freq[noteIndex] * maxPartialRatios[partial], currentSampleRate);
                 for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
                 {
-                    auto levelSample = oscillator->getNextSample() * level * maxAmplitudes[partial]; //try with .at() instead of []
+                    auto levelSample = oscillator->getNextSample() * level * maxAmplitudes[partial];
                     leftBuffer[sample] += levelSample;
                     rightBuffer[sample] += levelSample;
                 }

@@ -99,7 +99,8 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
            float l_ij = std::min(amp[i], amp[j]);
            float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
            float f_dif = std::abs(freq[i] - freq[j]);
-           d = d + l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif)); // exp-function in lookup-table (std::vector -> length 64?) ... x-values = s*f_dif
+           d += l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif)); 
+           // exp-function in lookup-table (std::vector -> length 64?) ... x-values = s * f_dif
         }
     }
     return d;
