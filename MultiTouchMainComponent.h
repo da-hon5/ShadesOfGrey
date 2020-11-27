@@ -28,11 +28,13 @@
 #include "SineOscillator.h"
 #include "BackgroundVisualisation.h"
 #include "Note.h"
+#include "DissonanceCurve.h"
 
 //==============================================================================
 class MultiTouchMainComponent : public juce::AudioAppComponent,
                                 public juce::Timer
 {
+    const int maxNumberOfPartials = 20;
 public:
     MultiTouchMainComponent()
     {
@@ -44,12 +46,12 @@ public:
         lowestOctave = -1;
         tuning = 440;
         root = lowestOctave * tuning;
-        numbOfPartials = 20; //BUG: initialize numbOfPartials with maxNumbOfPartials => otherwise Error
+        numbOfPartials = 8;
         freq = std::vector<float>(numbOfIntervals, 0.0f);
         intervals = std::vector<float>(numbOfIntervals, 0.0f);
         scaleSteps = std::vector<float>(numbOfIntervals, 0.0f);
-        partialRatios = std::vector<float>(numbOfPartials, 0.0f);
-        amplitudes = std::vector<float>(numbOfPartials, 0.0f);
+        maxPartialRatios = std::vector<float>(maxNumberOfPartials, 0.0f);
+        maxAmplitudes = std::vector<float>(maxNumberOfPartials, 0.0f);
         currentSampleRate = 0.0f;
         spectrumId = 1;
 
@@ -61,6 +63,8 @@ public:
         calculateLevel();*/
 
         /********************** backgroundVisualisation ********************************/
+        std::vector<float> partialRatios = {maxPartialRatios.begin(), maxPartialRatios.begin() + numbOfPartials};
+        std::vector<float> amplitudes = {maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
         backgroundVisualisation.reset(new BackgroundVisualisation(numbOfIntervals, octaves, notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(backgroundVisualisation.get());
         backgroundVisualisation->setInterceptsMouseClicks(false, true);
@@ -126,6 +130,7 @@ public:
         selectNotesPerOct.onChange = [this] {
             notesPerOct = selectNotesPerOct.getSelectedId();
             backgroundVisualisation->setNotesPerOctave(notesPerOct);
+            dissonanceCurve->setNotesPerOctave(notesPerOct);
             numbOfNotes = notesPerOct * octaves;
         };
         selectNotesPerOct.setSelectedId(12);
@@ -149,9 +154,11 @@ public:
             selectNumbOfPartials.addItem(juce::String(i), i);
         }
         selectNumbOfPartials.onChange = [this] {
-            numbOfPartials = selectNumbOfPartials.getSelectedId();
-            partialRatios = std::vector<float>(numbOfPartials, 0.0f);
-            amplitudes = std::vector<float>(numbOfPartials, 0.0f);
+            numbOfPartials = std::min(maxNumberOfPartials, selectNumbOfPartials.getSelectedId());
+            std::vector<float> partialRatios = { maxPartialRatios.begin(), maxPartialRatios.begin() + numbOfPartials };
+            std::vector<float> amplitudes = { maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
+            backgroundVisualisation->setPartialRatios(partialRatios);
+            backgroundVisualisation->setAmplitudes(amplitudes);
             calculateSpectrum();
         };
         selectNumbOfPartials.setSelectedId(8);
@@ -172,7 +179,7 @@ public:
         selectLowestOctaveLabel.setText("Lowest Octave", juce::dontSendNotification);
         selectLowestOctaveLabel.attachToComponent(&selectLowestOctave, false);
         addAndMakeVisible(selectNumbOfPartialsLabel);
-        selectNumbOfPartialsLabel.setText("Number of Partials", juce::dontSendNotification);
+        selectNumbOfPartialsLabel.setText("#Partials for Calculation", juce::dontSendNotification);
         selectNumbOfPartialsLabel.attachToComponent(&selectNumbOfPartials, false);
 
         /********************** Sliders ********************************/
@@ -188,6 +195,10 @@ public:
             backgroundVisualisation->setRoot(root);
         };
 
+        /********************** DissonanceCurve ********************************/
+        dissonanceCurve.reset(new DissonanceCurve(notesPerOct));
+        addAndMakeVisible(dissonanceCurve.get());
+
         /********************** notes ********************************/
         for (int i = 0; i < numbOfIntervals; i++)
         {
@@ -197,20 +208,8 @@ public:
             notes[i]->setInterceptsMouseClicks(false, false);
             notes[i]->reset();
         }
-        for (int i = 0; i < numbOfIntervals; i++)
-        {
-            /*notes[i]->noteIsDragged = [i, this] {
-                updateFrequency();
-                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-            };*/
-            /*notes[i]->noteIsClicked = [i, this] {
-                notes[i]->reset();
-                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-                updateFrequency();
-            };*/
-        }
-
-        setSize (800, 600);
+     
+        setSize (1000, 600);
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
         startTimer (100);
@@ -225,9 +224,9 @@ public:
     void calculateLevel()
     {
         float sumOfAmplitudes = 0.0f;
-        for (int i = 0; i < numbOfPartials; ++i)
+        for (int i = 0; i < maxNumberOfPartials; ++i)
         {
-            sumOfAmplitudes += amplitudes[i];
+            sumOfAmplitudes += maxAmplitudes[i];
         }
         level = 0.9f / (float)(numbOfIntervals * sumOfAmplitudes);
     }
@@ -235,33 +234,35 @@ public:
     void calculateSpectrum()
     {
         if (spectrumId == 1) { //sawtooth
-            for (int i = 0; i < numbOfPartials; ++i)
+            for (int i = 0; i < maxNumberOfPartials; ++i)
             {
-                partialRatios[i] = (float)i + 1;
-                amplitudes[i] = 1 / ((float)i + 1);
+                maxPartialRatios[i] = (float)i + 1;
+                maxAmplitudes[i] = 1 / ((float)i + 1);
             }
         }
         else if (spectrumId == 2) { //square
-            for (int i = 0; i < numbOfPartials; ++i)
+            for (int i = 0; i < maxNumberOfPartials; ++i)
             {
-                partialRatios[i] = 2 * (float)i + 1;
-                amplitudes[i] = 1 / ((float)i + 1);
+                maxPartialRatios[i] = 2 * (float)i + 1;
+                maxAmplitudes[i] = 1 / ((float)i + 1);
             }
         }
         else if (spectrumId == 3) { //triangle
-            for (int i = 0; i < numbOfPartials; ++i)
+            for (int i = 0; i < maxNumberOfPartials; ++i)
             {
-                partialRatios[i] = 2 * (float)i + 1;
-                amplitudes[i] = 1 / (float)std::pow(i + 1, 2);
+                maxPartialRatios[i] = 2 * (float)i + 1;
+                maxAmplitudes[i] = 1 / (float)std::pow(i + 1, 2);
             }
         }
         else if (spectrumId == 4) { //random
-            for (int i = 0; i < numbOfPartials; ++i)
+            for (int i = 0; i < maxNumberOfPartials; ++i)
             {
-                partialRatios[i] = juce::Random::getSystemRandom().nextFloat() * numbOfPartials;
-                amplitudes[i] = juce::Random::getSystemRandom().nextFloat();
+                maxPartialRatios[i] = juce::Random::getSystemRandom().nextFloat() * maxNumberOfPartials;
+                maxAmplitudes[i] = juce::Random::getSystemRandom().nextFloat();
             }
         }
+        std::vector<float> partialRatios = { maxPartialRatios.begin(), maxPartialRatios.begin() + numbOfPartials };
+        std::vector<float> amplitudes = { maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
         backgroundVisualisation->setPartialRatios(partialRatios);
         backgroundVisualisation->setAmplitudes(amplitudes);
         calculateLevel();
@@ -269,17 +270,18 @@ public:
 
     void resized() override
     {
-        userInstructions.setBounds(10, 100, getWidth() - 20, 20);
-        tuningSlider.setBounds(60, 70, 400, 20);
-        selectNotesPerOct.setBounds(10, 30, 100, 20);
-        selectOctaves.setBounds(140, 30, 100, 20);
-        selectLowestOctave.setBounds(270, 30, 100, 20);
-        selectNumbOfPartials.setBounds(400, 30, 100, 20);
-        sawtoothButton.setBounds(530, 10, 70, 20);
-        squareButton.setBounds(530, 30, 70, 20);
-        triangleButton.setBounds(530, 50, 70, 20);
-        randomButton.setBounds(530, 70, 70, 20);
-        backgroundVisualisation->setBounds(0, 100, getWidth(), getHeight() - 100);
+        userInstructions.setBounds(10, 125, getWidth() - 20, 20);
+        tuningSlider.setBounds(60, 85, 400, 20);
+        selectNotesPerOct.setBounds(10, 30, 120, 30);
+        selectOctaves.setBounds(140, 30, 120, 30);
+        selectLowestOctave.setBounds(270, 30, 120, 30);
+        selectNumbOfPartials.setBounds(400, 30, 120, 30);
+        sawtoothButton.setBounds(530, 10, 70, 30);
+        squareButton.setBounds(530, 50, 70, 30);
+        triangleButton.setBounds(615, 10, 70, 30);
+        randomButton.setBounds(615, 50, 70, 30);
+        backgroundVisualisation->setBounds(0, 120, getWidth(), getHeight() - 120);
+        dissonanceCurve->setBounds(730, 10, 160, 100);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
             notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
@@ -329,6 +331,7 @@ public:
     { 
         backgroundVisualisation->update();
         backgroundVisualisation->repaint();
+        dissonanceCurve->repaint();
     }
 
     void updateFrequency()
@@ -350,7 +353,7 @@ public:
     void prepareToPlay (int, double sampleRate) override
     {
         currentSampleRate = sampleRate;
-        for (auto i = 0; i < numbOfIntervals * numbOfPartials; ++i) {
+        for (auto i = 0; i < numbOfIntervals * maxNumberOfPartials; ++i) {
             auto* oscillator = new SineOscillator();
             oscillators.add(oscillator);
         } 
@@ -367,13 +370,13 @@ public:
 
         for (auto noteIndex = 0; noteIndex < numbOfIntervals; ++noteIndex)
         {
-            for (int partial = 0; partial < numbOfPartials; ++partial)
+            for (int partial = 0; partial < maxNumberOfPartials; ++partial)
             {
-                auto* oscillator = oscillators.getUnchecked((noteIndex * numbOfPartials) + partial);
-                oscillator->setFrequency(freq[noteIndex] * partialRatios[partial], currentSampleRate);
+                auto* oscillator = oscillators.getUnchecked((noteIndex * maxNumberOfPartials) + partial);
+                oscillator->setFrequency(freq[noteIndex] * maxPartialRatios[partial], currentSampleRate);
                 for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
                 {
-                    auto levelSample = oscillator->getNextSample() * level * amplitudes[partial];
+                    auto levelSample = oscillator->getNextSample() * level * maxAmplitudes[partial]; //try with .at() instead of []
                     leftBuffer[sample] += levelSample;
                     rightBuffer[sample] += levelSample;
                 }
@@ -401,6 +404,7 @@ private:
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
     juce::OwnedArray<SineOscillator> oscillators;
     juce::OwnedArray<Note> notes;
+    std::unique_ptr<DissonanceCurve> dissonanceCurve;
 
     int numbOfIntervals;
     int notesPerOct;
@@ -413,8 +417,8 @@ private:
     std::vector<float> freq;
     std::vector<float> intervals;
     std::vector<float> scaleSteps;
-    std::vector<float> partialRatios;
-    std::vector<float> amplitudes;
+    std::vector<float> maxPartialRatios;
+    std::vector<float> maxAmplitudes;
     double currentSampleRate;
     float level;
     int spectrumId;

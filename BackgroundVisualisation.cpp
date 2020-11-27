@@ -83,9 +83,6 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
     const float b2 = 5.75f;
 
     float d = 0.0f; 
-    float l_ij = 0.0f; 
-    float s = 0.0f; 
-    float f_dif = 0.0f;
 
     const int N = freq.size();
     jassert(freq.size() == amp.size());
@@ -99,10 +96,10 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            l_ij = std::min(amp[i], amp[j]);
-            s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
-            f_dif = abs(freq[i] - freq[j]);
-            d = d + l_ij * (exp(-b1 * s * f_dif) - exp(-b2 * s * f_dif));
+           float l_ij = std::min(amp[i], amp[j]);
+           float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
+           float f_dif = std::abs(freq[i] - freq[j]);
+           d = d + l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif)); // exp-function in lookup-table (std::vector -> length 64?) ... x-values = s*f_dif
         }
     }
     return d;

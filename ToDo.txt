@@ -3,7 +3,11 @@
 
 2) create gui for the user to change the spectrum
 
-3) implement adaptive tuning?
+3) implement adaptive tuning? => dynamic
+or at least automatic (ideal) spectrum generation for a given scale (e.g. 11-tet) => static
+
+4) plot/draw dissonance curve for the current spectrum and mark the steps of the current scale
+
 
 
 --------GIT COMMANDS:-------
