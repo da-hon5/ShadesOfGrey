@@ -35,11 +35,13 @@ public:
         numbofpartials = partials_ratios.size();
         allpartials = std::vector<float>(2 * numbofpartials, 0.0f);
     }
+
     void setAmplitudes(std::vector<float>& newAmplitudes)
     {
         amplitudes = newAmplitudes;
         allamplitudes = std::vector<float>(2 * numbofpartials, 0.0f);
     }
+
     void setRoot(float newRoot) { root = newRoot; }
 
     void paint(juce::Graphics& g) override
@@ -54,10 +56,15 @@ public:
         }
         g.strokePath(path, PathStrokeType(1.5f));
 
-        g.setColour(juce::Colour::fromFloatRGBA(1.0f, 0.0f, 0.0f, 0.8f));
+        g.setColour(juce::Colours::red);
         for (int i = 1; i < notesPerOct; i++) {
-            g.fillRect(juce::Rectangle<float>(i * getWidth() / notesPerOct, 0, 1.0, getHeight()));
+            g.fillRect(juce::Rectangle<float>(i * getWidth() / notesPerOct, 0, 0.75f, getHeight()));
         }
+
+        g.setColour(juce::Colours::blue);
+        g.fillRect(juce::Rectangle<float>((702.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //fifth = 702 cents
+        g.fillRect(juce::Rectangle<float>((498.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //forth = 498 cents
+        g.fillRect(juce::Rectangle<float>((386.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //major third = 386 cents
     }
 
     void update()

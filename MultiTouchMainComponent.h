@@ -29,6 +29,7 @@
 #include "BackgroundVisualisation.h"
 #include "Note.h"
 #include "DissonanceCurve.h"
+#include "Spectrum.h"
 
 //==============================================================================
 class MultiTouchMainComponent : public juce::AudioAppComponent,
@@ -199,9 +200,13 @@ public:
             dissonanceCurve->setRoot(root);
         };
 
-        /********************** DissonanceCurve ********************************/
+        /********************** dissonanceCurve ********************************/
         dissonanceCurve.reset(new DissonanceCurve(notesPerOct, root, partialRatios, amplitudes));
         addAndMakeVisible(dissonanceCurve.get());
+
+        /********************** spectrum ********************************/
+        spectrum.reset(new Spectrum(maxPartialRatios, maxAmplitudes));
+        addAndMakeVisible(spectrum.get());
 
         /********************** notes ********************************/
         for (int i = 0; i < numbOfIntervals; i++)
@@ -216,7 +221,7 @@ public:
         setSize(1000, 600);
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
-        startTimer(1, 100);
+        startTimer(1, 60);
         startTimer(2, 2000);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,13 +277,16 @@ public:
         backgroundVisualisation->setAmplitudes(amplitudes);
         dissonanceCurve->setPartialRatios(partialRatios);
         dissonanceCurve->setAmplitudes(amplitudes);
+        spectrum->setPartialRatios(maxPartialRatios);
+        spectrum->setAmplitudes(maxAmplitudes);
+        spectrum->repaint();
         calculateLevel();
     }
 
     void resized() override
     {
-        userInstructions.setBounds(10, 140, getWidth() - 20, 20);
-        tuningSlider.setBounds(60, 85, 400, 20);
+        userInstructions.setBounds(10, 160, getWidth() - 20, 20);
+        tuningSlider.setBounds(60, 85, 430, 20);
         selectNotesPerOct.setBounds(10, 30, 120, 30);
         selectOctaves.setBounds(140, 30, 120, 30);
         selectLowestOctave.setBounds(270, 30, 120, 30);
@@ -287,8 +295,9 @@ public:
         squareButton.setBounds(530, 50, 70, 30);
         triangleButton.setBounds(615, 10, 70, 30);
         randomButton.setBounds(615, 50, 70, 30);
-        backgroundVisualisation->setBounds(0, 140, getWidth(), getHeight() - 140);
-        dissonanceCurve->setBounds(720, 10, 200, 120);
+        backgroundVisualisation->setBounds(0, 160, getWidth(), getHeight() - 160);
+        dissonanceCurve->setBounds(700, 10, 280, 140);
+        spectrum->setBounds(990, 10, 280, 140);
         for (auto i = 0; i < numbOfIntervals; i++)
         {
             notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
@@ -414,9 +423,10 @@ private:
     juce::TextButton randomButton{ "Random" };
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
+    std::unique_ptr<DissonanceCurve> dissonanceCurve;
+    std::unique_ptr<Spectrum> spectrum;
     juce::OwnedArray<SineOscillator> oscillators;
     juce::OwnedArray<Note> notes;
-    std::unique_ptr<DissonanceCurve> dissonanceCurve;
 
     int numbOfIntervals;
     int notesPerOct;

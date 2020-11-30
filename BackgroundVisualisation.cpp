@@ -46,7 +46,7 @@ void BackgroundVisualisation::update()
     std::vector<float> partialsnew(numbofpartials);
     for (float i = 0; i <= numberOfNotes; i++) {
         for (int j = 0; j < numbofpartials; j++) {
-            partialsnew[j] = root * partials_ratios[j] * pow(2, i / notesPerOctave);
+            partialsnew[j] = root * partials_ratios[j] * std::pow(2, i / notesPerOctave);
         }
         std::copy(partialsnew.begin(), partialsnew.end(), allpartials.begin() + (numberofintervals * numbofpartials));
         dissvector[i] = dissmeasure(allpartials, allamplitudes);
