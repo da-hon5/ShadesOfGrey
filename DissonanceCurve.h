@@ -56,15 +56,15 @@ public:
         }
         g.strokePath(path, PathStrokeType(1.5f));
 
-        g.setColour(juce::Colours::red);
+        g.setColour(juce::Colours::grey);
         for (int i = 1; i < notesPerOct; i++) {
             g.fillRect(juce::Rectangle<float>(i * getWidth() / notesPerOct, 0, 0.75f, getHeight()));
         }
 
         g.setColour(juce::Colours::blue);
-        g.fillRect(juce::Rectangle<float>((702.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //fifth = 702 cents
-        g.fillRect(juce::Rectangle<float>((498.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //forth = 498 cents
-        g.fillRect(juce::Rectangle<float>((386.0f / 1200) * getWidth(), 0, 1.0f, getHeight())); //major third = 386 cents
+        g.fillRect(juce::Rectangle<float>((702.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //fifth = 702 cents
+        g.fillRect(juce::Rectangle<float>((498.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //forth = 498 cents
+        g.fillRect(juce::Rectangle<float>((386.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //major third = 386 cents
     }
 
     void update()

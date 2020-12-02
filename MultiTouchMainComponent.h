@@ -75,10 +75,12 @@ public:
         addAndMakeVisible(squareButton);
         addAndMakeVisible(triangleButton);
         addAndMakeVisible(randomButton);
+        addAndMakeVisible(optimizeSpectrumButton);
         sawtoothButton.setClickingTogglesState(true);
         squareButton.setClickingTogglesState(true);
         triangleButton.setClickingTogglesState(true);
         randomButton.setClickingTogglesState(true);
+        optimizeSpectrumButton.setClickingTogglesState(true);
         sawtoothButton.onClick = [this] { 
             if (sawtoothButton.getToggleState())
             {
@@ -104,10 +106,18 @@ public:
             spectrumId = 4;
             calculateSpectrum();
         };
+        optimizeSpectrumButton.onClick = [this] {
+            if (optimizeSpectrumButton.getToggleState())
+            {
+                spectrumId = 5;
+                calculateSpectrum();
+            }
+        };
         sawtoothButton.setRadioGroupId(1);
         squareButton.setRadioGroupId(1);
         triangleButton.setRadioGroupId(1);
         randomButton.setRadioGroupId(1);
+        optimizeSpectrumButton.setRadioGroupId(1);
         sawtoothButton.triggerClick(); //sawtooth = default
 
         /********************** ComboBoxes ********************************/
@@ -133,6 +143,11 @@ public:
             backgroundVisualisation->setNotesPerOctave(notesPerOct);
             dissonanceCurve->setNotesPerOctave(notesPerOct);
             numbOfNotes = notesPerOct * octaves;
+            if (optimizeSpectrumButton.getToggleState())
+            {
+                spectrumId = 5;
+                calculateSpectrum();
+            }
         };
         selectNotesPerOct.setSelectedId(12);
 
@@ -222,7 +237,7 @@ public:
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
         startTimer(1, 60);
-        startTimer(2, 2000);
+        startTimer(2, 1000);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// END OF CONSTRUCTOR /////////////////////////////////////////////////////////////////
@@ -271,6 +286,17 @@ public:
                 maxAmplitudes[i] = juce::Random::getSystemRandom().nextFloat();
             }
         }
+        else if (spectrumId == 5) { //optimize Spectrum for Equal Temperaments (Sethares p. 247)
+            const float s = std::pow(2, 1 / (float)notesPerOct);
+            for (int i = 0; i < maxNumberOfPartials; ++i)
+            {
+                float exponent = std::round(std::log10(i + 1) / std::log10(s)); //s^x = z  =>  x = log(z)/log(s)
+                //Logger::outputDebugString(String(exponent));
+                maxPartialRatios[i] = std::pow(s, exponent);
+                Logger::outputDebugString(String(maxPartialRatios[i]));
+                maxAmplitudes[i] = 1 / ((float)i + 1);
+            }
+        }
         std::vector<float> partialRatios = { maxPartialRatios.begin(), maxPartialRatios.begin() + numbOfPartials };
         std::vector<float> amplitudes = { maxAmplitudes.begin(), maxAmplitudes.begin() + numbOfPartials };
         backgroundVisualisation->setPartialRatios(partialRatios);
@@ -295,6 +321,7 @@ public:
         squareButton.setBounds(530, 50, 70, 30);
         triangleButton.setBounds(615, 10, 70, 30);
         randomButton.setBounds(615, 50, 70, 30);
+        optimizeSpectrumButton.setBounds(530, 90, 160, 30);
         backgroundVisualisation->setBounds(0, 160, getWidth(), getHeight() - 160);
         dissonanceCurve->setBounds(700, 10, 280, 140);
         spectrum->setBounds(990, 10, 280, 140);
@@ -325,22 +352,6 @@ public:
         notes[event.source.getIndex()]->reset();
         notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
         updateFrequency();
-    }
-
-    bool keyPressed(const KeyPress& k) override 
-    {
-        if (k.getTextCharacter() == ' ') {
-            for (auto i = 0; i < numbOfIntervals; i++)
-            {
-                notes[i]->reset();
-                notes[i]->setBounds(notes[i]->getPosition().getX() - 12.5, notes[i]->getPosition().getY() - 12.5, 25, 25);
-            }
-            std::fill(scaleSteps.begin(), scaleSteps.end(), 0.0f);
-            std::fill(intervals.begin(), intervals.end(), 0.0f);
-            std::fill(freq.begin(), freq.end(), 0.0f);
-        } 
-        updateFrequency();
-        return true;
     }
 
     void timerCallback(int timerID) override
@@ -391,7 +402,7 @@ public:
 
         for (auto noteIndex = 0; noteIndex < numbOfIntervals; ++noteIndex)
         {
-            for (int partial = 0; partial < maxNumberOfPartials; ++partial)
+            for (int partial = 0; partial < maxNumberOfPartials; ++partial) //play all 20 partials
             {
                 auto* oscillator = oscillators.getUnchecked((noteIndex * maxNumberOfPartials) + partial);
                 oscillator->setFrequency(freq[noteIndex] * maxPartialRatios[partial], currentSampleRate);
@@ -421,6 +432,7 @@ private:
     juce::TextButton squareButton{ "Square" };
     juce::TextButton triangleButton{ "Triangle" };
     juce::TextButton randomButton{ "Random" };
+    juce::TextButton optimizeSpectrumButton{ "Optimize Spectrum" };
 
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
     std::unique_ptr<DissonanceCurve> dissonanceCurve;
