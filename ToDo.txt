@@ -7,7 +7,6 @@
 
 4) implement envelope (adsr)
 
-5) display dissonance value of the currently played chord
 
 
 

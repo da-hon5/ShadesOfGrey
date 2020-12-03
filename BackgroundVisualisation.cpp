@@ -10,51 +10,48 @@
 
 #include "BackgroundVisualisation.h"
 
-BackgroundVisualisation::BackgroundVisualisation(int numberofintervals, int octaves, int notesPerOctave,
-    float root, std::vector<float>& partials_ratios, std::vector<float>& amplitudes)
+BackgroundVisualisation::BackgroundVisualisation(int numberOfIntervals, int octaves, int notesPerOctave,
+    float root, std::vector<float>& partialRatios, std::vector<float>& amplitudes)
 : //member initializer list
 root(root),
 octaves(octaves),
 notesPerOctave(notesPerOctave),
-numbofpartials(partials_ratios.size()),
+numberOfPartials(partialRatios.size()),
 numberOfNotes(notesPerOctave * octaves),
-numberofintervals(numberofintervals),
+numberOfIntervals(numberOfIntervals),
+currentDissonance(0.0f),
 amplitudes(amplitudes),
-partials_ratios(partials_ratios),
-dissvector(std::vector<float>(numberOfNotes + 1)),
-intervals(std::vector<float>(numberofintervals)),
-allpartials(std::vector<float>((numberofintervals + 1)* numbofpartials, 0.0f)),
-allamplitudes(std::vector<float>((numberofintervals + 1)* numbofpartials, 0.0f))
+partialRatios(partialRatios),
+dissvector(std::vector<float>(numberOfNotes)),
+intervals(std::vector<float>(numberOfIntervals)),
+allPartials(std::vector<float>((numberOfIntervals + 1)* numberOfPartials, 0.0f)),
+allAmplitudes(std::vector<float>((numberOfIntervals + 1)* numberOfPartials, 0.0f))
 {
-}
-
-void BackgroundVisualisation::setIntervals(std::vector<float>& intvls)
-{
-    jassert(intervals.size() == numberofintervals);
-    intervals = intvls;
-    update();
 }
 
 void BackgroundVisualisation::update()
 {    
-    for (int i = 0; i < (numberofintervals + 1); i++) {
-        std::copy(amplitudes.begin(), amplitudes.end(), allamplitudes.begin() + (i * amplitudes.size())); //all amplitudes + new amplitudes
+    for (int i = 0; i < (numberOfIntervals + 1); i++) {
+        std::copy(amplitudes.begin(), amplitudes.end(), allAmplitudes.begin() + (i * amplitudes.size())); //all amplitudes + new amplitudes
     }
 
-    auto allpartials = calculate_frequencies();
+    calculate_frequencies();
 
-    std::vector<float> partialsnew(numbofpartials);
-    for (float i = 0; i <= numberOfNotes; i++) {
-        for (int j = 0; j < numbofpartials; j++) {
-            partialsnew[j] = root * partials_ratios[j] * std::pow(2, i / notesPerOctave);
+    std::vector<float> newPartials(numberOfPartials, -1.0f);
+    currentDissonance = dissmeasure(allPartials, allAmplitudes);
+    for (float i = 0; i < numberOfNotes; i++) {
+        for (int j = 0; j < numberOfPartials; j++) {
+            newPartials[j] = root * partialRatios[j] * std::pow(2, i / notesPerOctave);
         }
-        std::copy(partialsnew.begin(), partialsnew.end(), allpartials.begin() + (numberofintervals * numbofpartials));
-        dissvector[i] = dissmeasure(allpartials, allamplitudes);
+        std::copy(newPartials.begin(), newPartials.end(), allPartials.begin() + (numberOfIntervals * numberOfPartials));
+        dissvector[i] = dissmeasure(allPartials, allAmplitudes);
     }
 
     float dissvector_max = *max_element(dissvector.begin(), dissvector.end());
     for (int i = 0; i < dissvector.size(); i++)
         dissvector[i] = dissvector[i] / dissvector_max;
+
+    repaint();
 }
 
 void BackgroundVisualisation::paint(Graphics& g)
@@ -94,24 +91,27 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
         loudn[j] = 0.0625 * pow(2, SPL[j]); 
     }*/
 
+    // exp-function in lookup-table? (std::vector -> length 64?) ... x-values = s * f_dif
     for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-           float l_ij = std::min(amp[i], amp[j]);
-           float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
-           float f_dif = std::abs(freq[i] - freq[j]);
-           d += l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif)); 
-           // exp-function in lookup-table (std::vector -> length 64?) ... x-values = s * f_dif
+        if (freq[i] >= 0) {
+            for (int j = 0; j < N; j++) {
+                if (freq[j] >= 0) {
+                    float l_ij = std::min(amp[i], amp[j]);
+                    float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
+                    float f_dif = std::abs(freq[i] - freq[j]);
+                    d += l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif));
+                }
+            }
         }
     }
     return d;
 }
 
-std::vector<float> BackgroundVisualisation::calculate_frequencies()
+void BackgroundVisualisation::calculate_frequencies()
 {
-    for (int j = 0; j < numberofintervals; j++) {
-        for (int i = 0; i < numbofpartials; i++) {
-            allpartials[i + (j * numbofpartials)] = root * partials_ratios[i] * intervals[j];
+    for (int j = 0; j < numberOfIntervals; j++) {
+        for (int i = 0; i < numberOfPartials; i++) {
+            allPartials[i + (j * numberOfPartials)] = root * partialRatios[i] * intervals[j];
         }
     }
-    return allpartials;
 }

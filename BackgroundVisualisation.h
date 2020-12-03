@@ -19,36 +19,38 @@ public:
 
     void setPartialRatios(std::vector<float>& newPartialRatios) 
     { 
-        partials_ratios = newPartialRatios; 
-        numbofpartials = partials_ratios.size();
-        allpartials = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
+        partialRatios = newPartialRatios; 
+        numberOfPartials = partialRatios.size();
+        allPartials = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
     }
     void setAmplitudes(std::vector<float>& newAmplitudes) 
     { 
         amplitudes = newAmplitudes;
-        allamplitudes = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
+        allAmplitudes = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
     }
     void setRoot(float newRoot) { root = newRoot; }
     void setOctaves(int newOctaves) { octaves = newOctaves; numberOfNotes = notesPerOctave * octaves; }
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave; numberOfNotes = notesPerOctave * octaves; }
-    void setIntervals(std::vector<float>& intvls);
+    void setIntervals(std::vector<float>& intvls) { jassert(intervals.size() == numberOfIntervals); intervals = intvls; };
+    float getCurrentDissonance() { return currentDissonance; };
     void update();
 
 private:
     void paint(Graphics& g) override;
     float dissmeasure(std::vector<float>& freq, std::vector<float>& amp);
-    std::vector<float> calculate_frequencies();
+    void calculate_frequencies();
 
     float root;
     int octaves;
     int notesPerOctave;
-    int numbofpartials;
+    int numberOfPartials;
     int numberOfNotes;
-    int numberofintervals;
+    int numberOfIntervals;
+    float currentDissonance;
     std::vector<float> amplitudes;
-    std::vector<float> partials_ratios;
+    std::vector<float> partialRatios;
     std::vector<float> dissvector;
     std::vector<float> intervals;
-    std::vector<float> allpartials = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
-    std::vector<float> allamplitudes = std::vector<float>((numberofintervals + 1) * numbofpartials, 0.0f);
+    std::vector<float> allPartials = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
+    std::vector<float> allAmplitudes = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
 };

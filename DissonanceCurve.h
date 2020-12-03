@@ -14,16 +14,16 @@
 class DissonanceCurve : public Component
 {
 public:
-    DissonanceCurve(int notesPerOct, float root, std::vector<float>& partials_ratios, std::vector<float>& amplitudes)
+    DissonanceCurve(int notesPerOct, float root, std::vector<float>& partialRatios, std::vector<float>& amplitudes)
         : //member initializer list
         root(root),
         notesPerOct(notesPerOct),
-        numbofpartials(partials_ratios.size()),
+        numberOfPartials(partialRatios.size()),
         amplitudes(amplitudes),
-        partials_ratios(partials_ratios),
+        partialRatios(partialRatios),
         dissvector(std::vector<float>(numberOfDataPoints)),
-        allpartials(std::vector<float>(2 * numbofpartials, 0.0f)),
-        allamplitudes(std::vector<float>(2 * numbofpartials, 0.0f))
+        allPartials(std::vector<float>(2 * numberOfPartials, 0.0f)),
+        allAmplitudes(std::vector<float>(2 * numberOfPartials, 0.0f))
     {
     }
 
@@ -31,15 +31,15 @@ public:
 
     void setPartialRatios(std::vector<float>& newPartialRatios)
     {
-        partials_ratios = newPartialRatios;
-        numbofpartials = partials_ratios.size();
-        allpartials = std::vector<float>(2 * numbofpartials, 0.0f);
+        partialRatios = newPartialRatios;
+        numberOfPartials = partialRatios.size();
+        allPartials = std::vector<float>(2 * numberOfPartials, 0.0f);
     }
 
     void setAmplitudes(std::vector<float>& newAmplitudes)
     {
         amplitudes = newAmplitudes;
-        allamplitudes = std::vector<float>(2 * numbofpartials, 0.0f);
+        allAmplitudes = std::vector<float>(2 * numberOfPartials, 0.0f);
     }
 
     void setRoot(float newRoot) { root = newRoot; }
@@ -69,18 +69,18 @@ public:
 
     void update()
     {
-        std::copy(amplitudes.begin(), amplitudes.end(), allamplitudes.begin()); //amplitudes with amplitudes appended
-        std::copy(amplitudes.begin(), amplitudes.end(), allamplitudes.begin() + amplitudes.size());
+        std::copy(amplitudes.begin(), amplitudes.end(), allAmplitudes.begin()); //amplitudes with amplitudes appended
+        std::copy(amplitudes.begin(), amplitudes.end(), allAmplitudes.begin() + amplitudes.size());
         
-        auto allpartials = calculate_frequencies();
+        calculate_frequencies();
 
-        std::vector<float> partialsnew(numbofpartials);
+        std::vector<float> newPartials(numberOfPartials);
         for (float i = 0; i < numberOfDataPoints; i++) {
-            for (int j = 0; j < numbofpartials; j++) {
-                partialsnew[j] = root * partials_ratios[j] * pow(2, i / numberOfDataPoints);
+            for (int j = 0; j < numberOfPartials; j++) {
+                newPartials[j] = root * partialRatios[j] * pow(2, i / numberOfDataPoints);
             }
-            std::copy(partialsnew.begin(), partialsnew.end(), allpartials.begin() + numbofpartials);
-            dissvector[i] = dissmeasure(allpartials, allamplitudes);
+            std::copy(newPartials.begin(), newPartials.end(), allPartials.begin() + numberOfPartials);
+            dissvector[i] = dissmeasure(allPartials, allAmplitudes);
         }
 
         float dissvector_max = *max_element(dissvector.begin(), dissvector.end());
@@ -123,23 +123,21 @@ public:
         return d;
     }
 
-    std::vector<float> calculate_frequencies()
+    void calculate_frequencies()
     {
-        for (int i = 0; i < numbofpartials; i++) {
-            allpartials[i] = root * partials_ratios[i];
-        }
-        return allpartials;
+        for (int i = 0; i < numberOfPartials; i++)
+            allPartials[i] = root * partialRatios[i];
     }
     
 private:
     const int numberOfDataPoints = 160;
     int notesPerOct;
     float root;
-    int numbofpartials;
+    int numberOfPartials;
     std::vector<float> amplitudes;
-    std::vector<float> partials_ratios;
+    std::vector<float> partialRatios;
     std::vector<float> dissvector;
-    std::vector<float> allpartials = std::vector<float>(2 * numbofpartials, 0.0f);
-    std::vector<float> allamplitudes = std::vector<float>(2 * numbofpartials, 0.0f);
+    std::vector<float> allPartials = std::vector<float>(2 * numberOfPartials, 0.0f);
+    std::vector<float> allAmplitudes = std::vector<float>(2 * numberOfPartials, 0.0f);
 };
 
