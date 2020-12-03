@@ -233,11 +233,11 @@ public:
             notes[i]->reset();
         }
      
-        setSize(1200, 800);
+        setSize(1300, 700);
         setWantsKeyboardFocus(true);
         setAudioChannels (0, 2); // no inputs, two outputs
-        startTimer(1, 60);
-        startTimer(2, 1000);
+        startTimer(1, 50);
+        startTimer(2, 500);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// END OF CONSTRUCTOR /////////////////////////////////////////////////////////////////
@@ -291,9 +291,7 @@ public:
             for (int i = 0; i < maxNumberOfPartials; ++i)
             {
                 float exponent = std::round(std::log10(i + 1) / std::log10(s)); //s^x = z  =>  x = log(z)/log(s)
-                //Logger::outputDebugString(String(exponent));
                 maxPartialRatios[i] = std::pow(s, exponent);
-                //Logger::outputDebugString(String(maxPartialRatios[i]));
                 maxAmplitudes[i] = 1 / ((float)i + 1);
             }
         }
@@ -321,7 +319,7 @@ public:
         squareButton.setBounds(530, 50, 70, 30);
         triangleButton.setBounds(615, 10, 70, 30);
         randomButton.setBounds(615, 50, 70, 30);
-        optimizeSpectrumButton.setBounds(530, 90, 160, 30);
+        optimizeSpectrumButton.setBounds(530, 90, 155, 30);
         backgroundVisualisation->setBounds(0, 160, getWidth(), getHeight() - 160);
         dissonanceCurve->setBounds(700, 10, 280, 140);
         spectrum->setBounds(990, 10, 280, 140);
@@ -334,7 +332,6 @@ public:
 
     void mouseDown(const juce::MouseEvent& event) override
     {
-        //Logger::outputDebugString(juce::String(event.source.getIndex()) + "is clicked");
         notes[event.source.getIndex()]->updatePosition(event.position);
         notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
         updateFrequency();
@@ -349,7 +346,6 @@ public:
 
     void mouseUp(const juce::MouseEvent& event) override
     {
-        //Logger::outputDebugString(juce::String(event.source.getIndex()) + "is released");
         notes[event.source.getIndex()]->reset();
         updateFrequency();
         notes[event.source.getIndex()]->setBounds(notes[event.source.getIndex()]->getPosition().getX() - 12.5, notes[event.source.getIndex()]->getPosition().getY() - 12.5, 25, 25);
@@ -360,7 +356,7 @@ public:
         if (timerID == 1) {
             backgroundVisualisation->update();
             float currentDissonance = backgroundVisualisation->getCurrentDissonance();
-            currentDissonanceLabel.setText("Current Dissonance: " + juce::String(currentDissonance, 4), juce::dontSendNotification);
+            currentDissonanceLabel.setText("Current Dissonance: " + juce::String(currentDissonance, 3), juce::dontSendNotification);
         }
         else {
             dissonanceCurve->update();

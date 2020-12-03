@@ -62,9 +62,9 @@ public:
         }
 
         g.setColour(juce::Colours::blue);
-        g.fillRect(juce::Rectangle<float>((702.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //fifth = 702 cents
-        g.fillRect(juce::Rectangle<float>((498.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //forth = 498 cents
-        g.fillRect(juce::Rectangle<float>((386.0f / 1200) * getWidth(), 0, 1.3f, getHeight())); //major third = 386 cents
+        g.fillRect(juce::Rectangle<float>((701.96f / 1200) * getWidth(), 0, 1.3f, getHeight())); //perfect fifth = 701.96 cents
+        g.fillRect(juce::Rectangle<float>((498.04f / 1200) * getWidth(), 0, 1.3f, getHeight())); //perfect forth = 498.04 cents
+        g.fillRect(juce::Rectangle<float>((386.31f / 1200) * getWidth(), 0, 1.3f, getHeight())); //major third = 386.31 cents
     }
 
     void update()
@@ -91,7 +91,6 @@ public:
     }
 
     float dissmeasure(std::vector<float>& freq, std::vector<float>& amp)
-        // To Do: calculate loudness out of amplitude first??
     {
         const float x_star = 0.24f;
         const float s1 = 0.0207f;
@@ -104,20 +103,24 @@ public:
         const int N = freq.size();
         jassert(freq.size() == amp.size());
 
-        /*std::vector<float> SPL(N);
-        std::vector<float> loudn(N);
+        //convert amplitudes of sine waves to loudnesses => Sethares (p. 346)
+        std::vector<float> loudness(N);
         for (int j = 0; j < N; j++) {
-            SPL[j] = 2 * log10((amp[j] / 1.41421356) / 0.00002);
-            loudn[j] = 0.0625 * pow(2, SPL[j]);
-        }*/
+            float SPL = 2 * std::log10((amp[j] / juce::MathConstants<float>::sqrt2) / 0.00002);
+            loudness[j] = 0.0625 * std::pow(2, SPL);
+        }
 
+        //write exp-function in lookup-table? (std::vector -> length 64?) ... x-values = s * f_dif
         for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                float l_ij = std::min(amp[i], amp[j]);
-                float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
-                float f_dif = std::abs(freq[i] - freq[j]);
-                d += l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif));
-                // exp-function in lookup-table (std::vector -> length 64?) ... x-values = s * f_dif
+            if (freq[i] >= 0) {
+                for (int j = 0; j < N; j++) {
+                    if (freq[j] >= 0) {
+                        float l_ij = std::min(loudness[i], loudness[j]);
+                        float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
+                        float f_dif = std::abs(freq[i] - freq[j]);
+                        d += l_ij * (std::exp(-b1 * s * f_dif) - std::exp(-b2 * s * f_dif));
+                    }
+                }
             }
         }
         return d;
@@ -130,7 +133,7 @@ public:
     }
     
 private:
-    const int numberOfDataPoints = 160;
+    const int numberOfDataPoints = 100;
     int notesPerOct;
     float root;
     int numberOfPartials;
