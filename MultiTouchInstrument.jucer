@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT name="MultiTouchInstrument" companyName="JUCE" version="1.0.0"
+              userNotes="A Multi-Touch Instrument with Visual Feedback" companyWebsite="http://juce.com"
+              projectType="guiapp" useAppConfig="0" addUsingNamespaceToJuceHeader="1"
+              id="I88mFB" jucerFormatVersion="1">
+  <MAINGROUP id="mphv6l" name="MultiTouchInstrument">
+    <GROUP id="{AC63E190-EB40-6624-EEC4-D6C358674554}" name="Source">
+      <FILE id="EzET6I" name="MultiTouchMainComponent.h" compile="0" resource="0"
+            file="Source/MultiTouchMainComponent.h"/>
+      <FILE id="CSfyrs" name="SineOscillator.h" compile="0" resource="0"
+            file="Source/SineOscillator.h"/>
+      <FILE id="iHzQdG" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="yAA834" name="DissonanceCurve.h" compile="0" resource="0"
+            file="Source/DissonanceCurve.h"/>
+      <FILE id="DMUqV2" name="Spectrum.h" compile="0" resource="0" file="Source/Spectrum.h"/>
+      <FILE id="cW6MGB" name="BackgroundVisualisation.cpp" compile="1" resource="0"
+            file="Source/BackgroundVisualisation.cpp"/>
+      <FILE id="Af9i1o" name="BackgroundVisualisation.h" compile="0" resource="0"
+            file="Source/BackgroundVisualisation.h"/>
+      <FILE id="KO28CL" name="Note.h" compile="0" resource="0" file="Source/Note.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <EXPORTFORMATS>
+    <VS2019 targetFolder="Builds/VisualStudio2019">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="MultiTouchInstrument"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="MultiTouchInstrument"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_core" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../../JUCE-dev/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../../JUCE-dev/modules"/>
+      </MODULEPATHS>
+    </VS2019>
+  </EXPORTFORMATS>
+  <JUCEOPTIONS/>
+  <LIVE_SETTINGS>
+    <OSX/>
+    <WINDOWS/>
+  </LIVE_SETTINGS>
+</JUCERPROJECT>
