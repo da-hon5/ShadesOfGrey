@@ -49,8 +49,12 @@ void BackgroundVisualisation::update()
         dissvector[i] = dissmeasure(allPartials, allAmplitudes);
     }
 
-    float dissvector_max = *max_element(dissvector.begin(), dissvector.end());
-    for (int i = 0; i < dissvector.size(); i++)
+    float dissvector_min = *min_element(dissvector.begin(), dissvector.begin() + numberOfNotes);
+    for (int i = 0; i < numberOfNotes; i++)
+        dissvector[i] = dissvector[i] - dissvector_min;
+
+    float dissvector_max = *max_element(dissvector.begin(), dissvector.begin() + numberOfNotes);
+    for (int i = 0; i < numberOfNotes; i++)
         dissvector[i] = dissvector[i] / dissvector_max;
 
     repaint();
@@ -64,9 +68,13 @@ void BackgroundVisualisation::paint(Graphics& g)
     float rectheight = getHeight();
     for (int i = 0; i < numberOfNotes; i++) {
         g.setColour(juce::Colour::fromFloatRGBA(0.0f, 0.0f, 0.0f, dissvector[i]));
-        g.fillRect(juce::Rectangle<float>(0 + (i * rectwidth), 0, rectwidth, rectheight));
+        juce::Rectangle<float> rectangle (0 + (i * rectwidth), 0, rectwidth, rectheight);
+        g.fillRect(rectangle);
+        g.setColour(juce::Colours::red);
+        g.setFont(10.0f);
+        g.drawText(juce::String(std::roundf(100 * dissvector[i])), rectangle, juce::Justification::centredBottom, true);
     }
-    g.setColour(juce::Colour::fromFloatRGBA(1.0f, 0.0f, 0.0f, 0.8f));
+    g.setColour(juce::Colours::red);
     for (int i = 1; i < octaves; i++) {
         g.fillRect(juce::Rectangle<float>(i * getWidth() / octaves, 0, 1.5, getHeight()));
     }

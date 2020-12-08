@@ -179,7 +179,7 @@ public:
             dissonanceCurve->setAmplitudes(amplitudes);
             calculateSpectrum();
         };
-        selectNumbOfPartials.setSelectedId(8);
+        selectNumbOfPartials.setSelectedId(20);
 
         /********************** Labels ********************************/
         addAndMakeVisible(userInstructions);
@@ -253,7 +253,7 @@ public:
         {
             sumOfAmplitudes += maxAmplitudes[i];
         }
-        level = 0.9f / (float)(numberOfIntervals * sumOfAmplitudes);
+        level = 1.0f / (float)(numberOfIntervals * sumOfAmplitudes);
     }
 
     void calculateSpectrum()
@@ -399,7 +399,7 @@ public:
 
         for (auto noteIndex = 0; noteIndex < numberOfIntervals; ++noteIndex)
         {
-            for (int partial = 0; partial < maxNumberOfPartials; ++partial) //play all 20 partials
+            for (int partial = 0; partial < numberOfPartials; ++partial) //replace with maxNumberOfPartials => all partials are played
             {
                 auto* oscillator = oscillators.getUnchecked((noteIndex * maxNumberOfPartials) + partial);
                 oscillator->setFrequency(freq[noteIndex] * maxPartialRatios[partial], currentSampleRate);
