@@ -9,7 +9,7 @@ This is a prototype of a polyphonic multi-touch instrument with a freely adjusta
 
 ## How to build the app
 
-For compiling the plugin you need the [JUCE framework](https://juce.com), a C++ environment and an IDE. 
+For compiling the application you need the [JUCE framework](https://juce.com), a C++ environment and an IDE. 
 
 
 ## Maintainer
