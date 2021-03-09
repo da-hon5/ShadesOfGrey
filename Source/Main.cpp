@@ -1,7 +1,12 @@
 /*
   ==============================================================================
 
-    This file contains the startup code for a PIP.
+    Author:  Hannes Bradl, hbradl@gmx.at
+
+    This is free source code: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
   ==============================================================================
 */
