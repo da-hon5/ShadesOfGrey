@@ -16,7 +16,7 @@ You can also find an executable for Windows under "Releases".
 
 ## Maintainer
 
-- [Hannes Bradl](mailto:hbradl@student.tugraz.at)
+- [Hannes Bradl](mailto:hbradl@gmx.at)
 
 
 
