@@ -1,27 +1,15 @@
+/*
+  ==============================================================================
 
-/*******************************************************************************
- The block below describes the properties of this PIP. A PIP is a short snippet
- of code that can be read by the Projucer and used to generate a JUCE project.
+    Author:  Hannes Bradl, hbradl@gmx.at
 
- BEGIN_JUCE_PIP_METADATA
+    This is free source code: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
- name:             MultiTouchInstrument
- description:      A Multi Touch Instrument with Visual Feedback
-
- dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats,
-                   juce_audio_processors, juce_audio_utils, juce_core,
-                   juce_data_structures, juce_events, juce_graphics,
-                   juce_gui_basics, juce_gui_extra
- exporters:        xcode_mac, vs2019, linux_make
-
- type:             Component
- mainClass:        MainContentComponent
-
- useLocalCopy:     1
-
- END_JUCE_PIP_METADATA
-
-*******************************************************************************/
+  ==============================================================================
+*/
 
 
 #pragma once
