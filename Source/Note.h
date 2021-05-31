@@ -17,21 +17,13 @@
 class Note : public Component
 {
 public:
-    Note()
-    {
-    }
+    Note() {}
 
     ~Note() = default;
 
-    void updatePosition(juce::Point<float> pos)
-    {
-        position = pos;
-    }
+    void updatePosition(juce::Point<float> pos) { position = pos; }
 
-    juce::Point<float> getPosition()
-    {
-        return position;
-    }
+    juce::Point<float> getPosition() { return position; }
 
     void paint(juce::Graphics& g) override
     {

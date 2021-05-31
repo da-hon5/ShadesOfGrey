@@ -20,7 +20,7 @@ public:
 
     void setFrequency(float frequency, float sampleRate)
     {
-        auto cyclesPerSample = frequency / sampleRate;
+        float cyclesPerSample = frequency / sampleRate;
         angleDelta = cyclesPerSample * juce::MathConstants<float>::twoPi;
     }
 
@@ -33,11 +33,12 @@ public:
 
     forcedinline float getNextSample() noexcept
     {
-        auto currentSample = std::sin(currentAngle);
+        float currentSample = std::sin(currentAngle);
         updateAngle();
         return currentSample;
     }
 
 private:
-    float currentAngle = 0.0f, angleDelta = 0.0f;
+    float currentAngle = 0.0f;
+    float angleDelta = 0.0f;
 };

@@ -18,17 +18,14 @@ class DissonanceCurve : public Component
 {
 public:
     DissonanceCurve(int notesPerOct, float root, std::vector<float>& partialRatios, std::vector<float>& amplitudes)
-        : //member initializer list
-        root(root),
-        notesPerOct(notesPerOct),
-        numberOfPartials(partialRatios.size()),
-        amplitudes(amplitudes),
-        partialRatios(partialRatios),
-        dissvector(std::vector<float>(numberOfDataPoints)),
-        allPartials(std::vector<float>(2 * numberOfPartials, 0.0f)),
-        allAmplitudes(std::vector<float>(2 * numberOfPartials, 0.0f))
-    {
-    }
+        : root(root),
+          notesPerOct(notesPerOct),
+          numberOfPartials(partialRatios.size()),
+          amplitudes(amplitudes),
+          partialRatios(partialRatios),
+          dissvector(std::vector<float>(numberOfDataPoints)),
+          allPartials(std::vector<float>(2 * numberOfPartials, 0.0f)),
+          allAmplitudes(std::vector<float>(2 * numberOfPartials, 0.0f)) {}
 
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOct = newNotesPerOctave; }
 
@@ -54,15 +51,12 @@ public:
         juce::Path path;
         path.startNewSubPath(juce::Point<float>(0, getHeight()));
         for (int i = 0; i < numberOfDataPoints; i++)
-        {
             path.lineTo(i * getWidth() / numberOfDataPoints, (1 - dissvector[i]) * getHeight());
-        }
         g.strokePath(path, PathStrokeType(1.5f));
 
         g.setColour(juce::Colours::grey);
-        for (int i = 1; i < notesPerOct; i++) {
+        for (int i = 1; i < notesPerOct; i++)
             g.fillRect(juce::Rectangle<float>(i * getWidth() / notesPerOct, 0, 0.75f, getHeight()));
-        }
 
         g.setColour(juce::Colours::blue);
         g.fillRect(juce::Rectangle<float>((701.96f / 1200) * getWidth(), 0, 1.3f, getHeight())); //perfect fifth = 701.96 cents
@@ -78,10 +72,11 @@ public:
         calculate_frequencies();
 
         std::vector<float> newPartials(numberOfPartials);
-        for (float i = 0; i < numberOfDataPoints; i++) {
-            for (int j = 0; j < numberOfPartials; j++) {
+        for (float i = 0; i < numberOfDataPoints; i++) 
+        {
+            for (int j = 0; j < numberOfPartials; j++) 
                 newPartials[j] = root * partialRatios[j] * pow(2, i / numberOfDataPoints);
-            }
+
             std::copy(newPartials.begin(), newPartials.end(), allPartials.begin() + numberOfPartials);
             dissvector[i] = dissmeasure(allPartials, allAmplitudes);
         }
@@ -108,16 +103,21 @@ public:
 
         //convert amplitudes of sine waves to loudnesses => Sethares (p. 346)
         std::vector<float> loudness(N);
-        for (int j = 0; j < N; j++) {
+        for (int j = 0; j < N; j++) 
+        {
             float SPL = 2 * std::log10((amp[j] / juce::MathConstants<float>::sqrt2) / 0.00002);
             loudness[j] = 0.0625 * std::pow(2, SPL);
         }
 
         //write exp-function in lookup-table? (std::vector -> length 64?) ... x-values = s * f_dif
-        for (int i = 0; i < N; i++) {
-            if (freq[i] >= 0) {
-                for (int j = 0; j < N; j++) {
-                    if (freq[j] >= 0) {
+        for (int i = 0; i < N; i++) 
+        {
+            if (freq[i] >= 0) 
+            {
+                for (int j = 0; j < N; j++) 
+                {
+                    if (freq[j] >= 0) 
+                    {
                         float l_ij = std::min(loudness[i], loudness[j]);
                         float s = x_star / (s1 * std::min(freq[i], freq[j]) + s2);
                         float f_dif = std::abs(freq[i] - freq[j]);

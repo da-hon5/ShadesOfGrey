@@ -41,8 +41,7 @@ public:
 private:
     void paint(Graphics& g) override;
     float dissmeasure(std::vector<float>& freq, std::vector<float>& amp);
-    void calculate_frequencies();
-
+    void calculateFrequencies();
     float root;
     int octaves;
     int notesPerOctave;

@@ -23,7 +23,6 @@
 class MultiTouchMainComponent : public juce::AudioAppComponent,
                                 public juce::MultiTimer
 {
-    const int maxNumberOfPartials = 20;
 public:
     MultiTouchMainComponent()
     {
@@ -419,13 +418,11 @@ private:
     juce::TextButton triangleButton{ "Triangle" };
     juce::TextButton randomButton{ "Random" };
     juce::TextButton optimizeSpectrumButton{ "Optimize Spectrum" };
-
     std::unique_ptr<BackgroundVisualisation> backgroundVisualisation;
     std::unique_ptr<DissonanceCurve> dissonanceCurve;
     std::unique_ptr<Spectrum> spectrum;
     juce::OwnedArray<SineOscillator> oscillators;
     juce::OwnedArray<Note> notes;
-
     int numberOfIntervals;
     int notesPerOct;
     int octaves;
@@ -441,6 +438,6 @@ private:
     double currentSampleRate;
     float level;
     int spectrumId;
-        
+    const int maxNumberOfPartials = 20;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultiTouchMainComponent)
 };
