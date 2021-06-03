@@ -14,6 +14,8 @@
 #pragma once
 #include <JuceHeader.h>
 
+#define NOTE_DIAMETER 40
+
 class Note : public Component
 {
 public:
@@ -28,7 +30,7 @@ public:
     void paint(juce::Graphics& g) override
     {
         g.setColour(juce::Colours::green);
-        juce::Rectangle<float> ballArea(0, 0, 25, 25);
+        juce::Rectangle<float> ballArea(0.0f, 0.0f, NOTE_DIAMETER, NOTE_DIAMETER);
         g.fillEllipse(ballArea);
     }
 

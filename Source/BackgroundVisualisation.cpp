@@ -15,19 +15,21 @@
 
 BackgroundVisualisation::BackgroundVisualisation(int numberOfIntervals, int octaves, int notesPerOctave,
     float root, std::vector<float>& partialRatios, std::vector<float>& amplitudes)
-    : root(root),
-      octaves(octaves),
-      notesPerOctave(notesPerOctave),
-      numberOfPartials(partialRatios.size()),
-      numberOfNotes(notesPerOctave * octaves),
-      numberOfIntervals(numberOfIntervals),
-      currentDissonance(0.0f),
-      amplitudes(amplitudes),
-      partialRatios(partialRatios),
-      dissvector(std::vector<float>(numberOfNotes)),
-      intervals(std::vector<float>(numberOfIntervals)),
-      allPartials(std::vector<float>((numberOfIntervals + 1)* numberOfPartials, 0.0f)),
-      allAmplitudes(std::vector<float>((numberOfIntervals + 1)* numberOfPartials, 0.0f)) {}
+    : numberOfIntervals(numberOfIntervals),
+    octaves(octaves),
+    notesPerOctave(notesPerOctave),
+    root(root),
+    partialRatios(partialRatios),
+    amplitudes(amplitudes),
+    currentDissonance(0.0f)
+{
+    numberOfNotes = notesPerOctave * octaves;
+    numberOfPartials = partialRatios.size();
+    dissvector.resize(numberOfNotes, 0.0f);
+    intervals.resize(numberOfIntervals, 0.0f);
+    allPartials.resize((size_t)((size_t)numberOfIntervals + 1) * numberOfPartials, 0.0f);
+    allAmplitudes.resize((size_t)((size_t)numberOfIntervals + 1) * numberOfPartials, 0.0f);
+}
 
 void BackgroundVisualisation::update()
 {    
@@ -40,11 +42,11 @@ void BackgroundVisualisation::update()
     std::copy(newPartials.begin(), newPartials.end(), allPartials.begin() + (numberOfIntervals * numberOfPartials));
     currentDissonance = dissmeasure(allPartials, allAmplitudes);
 
-    for (float i = 0; i < numberOfNotes; i++) 
+    for (int i = 0; i < numberOfNotes; i++) 
     {
         for (int j = 0; j < numberOfPartials; j++) 
         {
-            newPartials[j] = root * partialRatios[j] * std::pow(2, i / notesPerOctave);
+            newPartials[j] = root * partialRatios[j] * std::pow(2.0f, (float)i / notesPerOctave);
         }
         std::copy(newPartials.begin(), newPartials.end(), allPartials.begin() + (numberOfIntervals * numberOfPartials));
         dissvector[i] = dissmeasure(allPartials, allAmplitudes);
@@ -66,11 +68,11 @@ void BackgroundVisualisation::paint(Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(juce::Colours::beige);
     float rectwidth = getWidth() / (float)numberOfNotes;
-    float rectheight = getHeight();
+    float rectheight = (float)getHeight();
     for (int i = 0; i < numberOfNotes; i++) 
     {
         g.setColour(juce::Colour::fromFloatRGBA(0.0f, 0.0f, 0.0f, dissvector[i]));
-        juce::Rectangle<float> rectangle (0 + (i * rectwidth), 0, rectwidth, rectheight);
+        juce::Rectangle<float> rectangle (0.0f + (i * rectwidth), 0.0f, rectwidth, rectheight);
         g.fillRect(rectangle);
         g.setColour(juce::Colours::red);
         g.setFont(10.0f);
@@ -78,7 +80,7 @@ void BackgroundVisualisation::paint(Graphics& g)
     }
     g.setColour(juce::Colours::red);
     for (int i = 1; i < octaves; i++)
-        g.fillRect(juce::Rectangle<float>(i * getWidth() / octaves, 0, 1.5, getHeight()));
+        g.fillRect(juce::Rectangle<float>(i * (float)getWidth() / octaves, 0.0f, 1.5f, (float)getHeight()));
 }
 
 float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector<float>& amp)
@@ -98,8 +100,8 @@ float BackgroundVisualisation::dissmeasure(std::vector<float>& freq, std::vector
     std::vector<float> loudness(N);
     for (int j = 0; j < N; j++) 
     {
-        float SPL = 2 * std::log10((amp[j] / juce::MathConstants<float>::sqrt2) / 0.00002);
-        loudness[j] = 0.0625 * std::pow(2, SPL); 
+        float SPL = 2 * std::log10((amp[j] / juce::MathConstants<float>::sqrt2) / 0.00002f);
+        loudness[j] = 0.0625f * std::pow(2.0f, SPL); 
     }
 
     //write exp-function in lookup-table? (std::vector -> length 64?) ... x-values = s * f_dif
@@ -127,6 +129,7 @@ void BackgroundVisualisation::calculateFrequencies()
     for (int j = 0; j < numberOfIntervals; j++) 
     {
         for (int i = 0; i < numberOfPartials; i++)
+
             allPartials[i + (j * numberOfPartials)] = root * partialRatios[i] * intervals[j];
     }
 }

@@ -24,13 +24,15 @@ public:
     { 
         partialRatios = newPartialRatios; 
         numberOfPartials = partialRatios.size();
-        allPartials = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
+        allPartials = std::vector<float>(((size_t)numberOfIntervals + 1) * (size_t)numberOfPartials, 0.0f);
     }
+
     void setAmplitudes(std::vector<float>& newAmplitudes) 
     { 
         amplitudes = newAmplitudes;
-        allAmplitudes = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
+        allAmplitudes = std::vector<float>(((size_t)numberOfIntervals + 1) * (size_t)numberOfPartials, 0.0f);
     }
+
     void setRoot(float newRoot) { root = newRoot; }
     void setOctaves(int newOctaves) { octaves = newOctaves; numberOfNotes = notesPerOctave * octaves; }
     void setNotesPerOctave(int newNotesPerOctave) { notesPerOctave = newNotesPerOctave; numberOfNotes = notesPerOctave * octaves; }
@@ -53,6 +55,6 @@ private:
     std::vector<float> partialRatios;
     std::vector<float> dissvector;
     std::vector<float> intervals;
-    std::vector<float> allPartials = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
-    std::vector<float> allAmplitudes = std::vector<float>((numberOfIntervals + 1) * numberOfPartials, 0.0f);
+    std::vector<float> allPartials;
+    std::vector<float> allAmplitudes;
 };
